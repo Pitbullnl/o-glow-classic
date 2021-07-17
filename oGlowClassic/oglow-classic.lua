@@ -1,4 +1,4 @@
-local _, ns = ...
+local title, ns = ...
 local oGlowClassic = ns.oGlowClassic
 
 local _VERSION = GetAddOnMetadata('oGlowClassic', 'version')
@@ -74,6 +74,8 @@ local ADDON_LOADED = function(self, event, addon)
 		end
 
 		self:CallOptionCallbacks()
+
+        print("v" .. _VERSION .. " loaded.")
 	end
 end
 
