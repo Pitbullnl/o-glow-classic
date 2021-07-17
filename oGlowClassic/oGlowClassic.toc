@@ -11,7 +11,7 @@ pipe.lua
 filter.lua
 display.lua
 colors.lua
-oglow.lua
+oglow-classic.lua
 
 ui\helpers.lua
 ui\pipes.lua
