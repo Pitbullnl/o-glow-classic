@@ -1,1 +1,1 @@
-# o-glow
+# o-glow-classic
