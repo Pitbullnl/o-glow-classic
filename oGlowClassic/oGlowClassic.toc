@@ -1,7 +1,7 @@
 ## Interface: 20501
 ## Title: oGlowClassic
 ## Author: Haste, sbd74 (updated for TBC Classic)
-## Version: 0.1.0-alpha
+## Version: 0.1.0-beta
 ## SavedVariables: oGlowClassicDB
 ## Notes: Make your shiny items... glow in the dark!
 
