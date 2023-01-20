@@ -1,7 +1,7 @@
-## Interface: 30400
+## Interface: 30401
 ## Title: oGlowClassic
-## Author: Haste, sbd74 (updated for TBC Classic)
-## Version: 0.3.0
+## Author: Haste, sbd74 (updated for WotLK Classic)
+## Version: 0.3.1
 ## SavedVariables: oGlowClassicDB
 ## Notes: Make your shiny items... glow in the dark!
 ## X-Website: https://www.curseforge.com/wow/addons/oglowclassic
