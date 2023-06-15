@@ -11,8 +11,8 @@ frame:SetScript('OnShow', function(self)
 end)
 
 local _BACKDROP = {
-	bgFile = [[Interface\Tooltips\UI-Tooltip-Background]],
-	edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]],
+	bgFile = 'BackdropTemplate',
+	edgeFile = 'BackdropTemplate',
 	tile = true, tileSize = 8, edgeSize = 16,
 	insets = {left = 2, right = 2, top = 2, bottom = 2}
 }
@@ -39,7 +39,7 @@ function frame:CreateOptions()
 	subtitle:SetPoint('RIGHT', self, -32, 0)
 	subtitle:SetText'Now with 30% less toxic radiation!'
 
-	local scroll = CreateFrame("ScrollFrame", nil, self)
+	local scroll = CreateFrame("ScrollFrame", nil, self, "ScrollFrameTemplate")
 	scroll:SetPoint('TOPLEFT', subtitle, 'BOTTOMLEFT', 0, -8)
 	scroll:SetPoint("BOTTOMRIGHT", 0, 4)
 
@@ -182,6 +182,11 @@ do
 	function frame:refresh()
 		local sChild = self.scrollchild
 		local filterFrame = self.filterFrame
+
+		-- Check if filterFrame is not nil
+		if not filterFrame then
+			return
+		end
 
 		-- XXX: Rewrite this to use oGlowClassic:GetNumFilters()
 		local filters = {}
