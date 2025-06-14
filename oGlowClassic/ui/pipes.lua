@@ -268,7 +268,11 @@ do
 	end
 end
 
-InterfaceOptions_AddCategory(frame)
+local category, layout = Settings.RegisterCanvasLayoutCategory(frame, frame.name)
+
+Settings.RegisterAddOnCategory(category)
+
+category.ID = frame.name
 
 SLASH_OGLOW_UI1 = '/oglow'
 SlashCmdList['OGLOW_UI'] = function()

@@ -79,4 +79,8 @@ function frame:CreateOptions()
 	end
 end
 
-InterfaceOptions_AddCategory(frame)
+local category, layout = Settings.RegisterCanvasLayoutCategory(frame, frame.name)
+
+Settings.RegisterAddOnCategory(category)
+
+category.ID = frame.name
