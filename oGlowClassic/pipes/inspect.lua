@@ -2,7 +2,8 @@
 --  - Write a description.
 -- we might want to merge this with char.lua...
 
-if(select(4, GetAddOnInfo("Fizzle"))) then return end
+local name, title, notes, enabled = C_AddOns.GetAddOnInfo("Fizzle")
+if enabled then return end
 
 local _E
 local slots = {
@@ -29,7 +30,7 @@ pollFrame:SetScript('OnUpdate', function(self, elapsed)
 		for i, slotName in next, _MISSING do
 			local itemLink = GetInventoryItemLink(unit, i)
 			if(itemLink) then
-				oGlowClassic:CallFilters('inspect', _G['Inspect' .. slotName .. 'Slot'], _E and itemLink)
+                oGlowClassic:CallFilters('inspect', 'Border', _G["Inspect"..slotName.."Slot"], _E and itemLink)
 
 				_MISSING[i] = nil
 			end
@@ -54,7 +55,7 @@ local update = function(self)
 			pollFrame:Show()
 		end
 
-		oGlowClassic:CallFilters('inspect', _G["Inspect"..slotName.."Slot"], _E and itemLink)
+		oGlowClassic:CallFilters('inspect', 'Border', _G["Inspect"..slotName.."Slot"], _E and itemLink)
 	end
 end
 
@@ -81,7 +82,7 @@ end
 local enable = function(self)
 	_E = true
 
-	if(IsAddOnLoaded("Blizzard_InspectUI")) then
+	if(C_AddOns.IsAddOnLoaded("Blizzard_InspectUI")) then
 		self:RegisterEvent('PLAYER_TARGET_CHANGED', update)
 		self:RegisterEvent('UNIT_INVENTORY_CHANGED', UNIT_INVENTORY_CHANGED)
 		self:RegisterEvent('INSPECT_READY', update)

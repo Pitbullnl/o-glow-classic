@@ -5,6 +5,7 @@ local argcheck = oGlowClassic.argcheck
 local colorTable = ns.colorTable
 
 local createBorder = function(self, point)
+    print("createBorder!")
 	local bc = self.oGlowClassicBorder
 	if(not bc) then
 		if(not self:IsObjectType'Frame') then

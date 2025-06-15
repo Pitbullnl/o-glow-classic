@@ -1,8 +1,9 @@
-## Interface: 40402
+## Interface: 50500
 ## X-Min-Interface-Classic: 11504
 ## X-Min-Interface-BCC: 20504
 ## X-Min-Interface-Wrath: 30401
 ## X-Min-Interface-Cata: 40402
+## X-Min-Interface-Mop: 50500
 ## Title: oGlowClassic
 ## Author: Haste, sbd74, pitbullnl91 (updated for WotLK/cata Classic)
 ## Version: 0.3.4

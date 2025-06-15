@@ -9,7 +9,7 @@ local update = function(self)
 			local slotFrame = _G['BankFrameItem' .. i]
 			local slotLink = C_Container.GetContainerItemLink(-1, i)
 
-			self:CallFilters('bank', slotFrame, _E and slotLink)
+			self:CallFilters('bank', 'Border', slotFrame, _E and slotLink)
 		end
 	end
 end

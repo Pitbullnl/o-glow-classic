@@ -10,13 +10,17 @@ local colorTable = setmetatable(
 	-- The bonus of doing this is that we don't really have to make any updates to
 	-- the add-on if any new item colors are added. It also caches unlike the old
 	-- version.
-	{__index = function(self, val)
-		argcheck(val, 2, 'number')
-		local r, g, b = GetItemQualityColor(val)
-		rawset(self, val, {r, g, b})
+    {__index = function(self, val)
+        argcheck(val, 2, 'number')
 
-		return self[val]
-	end}
+        local r, g, b = C_Item.GetItemQualityColor(val)
+--         if not r then
+--             r, g, b = 1, 1, 1
+--         end
+
+        rawset(self, val, {r, g, b})
+        return self[val]
+    end}
 )
 
 function oGlowClassic:RegisterColor(name, r, g, b)

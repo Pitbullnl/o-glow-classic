@@ -11,7 +11,7 @@ local send = function(self)
 	for i=1, ATTACHMENTS_MAX_SEND do
 		local slotLink = GetSendMailItemLink(i)
 		local slotFrame = _G["SendMailAttachment"..i]
-		self:CallFilters('mail', slotFrame, _E and slotLink)
+		self:CallFilters('mail', 'Border', slotFrame, _E and slotLink)
 	end
 end
 
@@ -30,7 +30,7 @@ local inbox = function()
 			end
 		end
 
-		oGlowClassic:CallFilters('mail', slotFrame, _E and unpack(stack))
+		oGlowClassic:CallFilters('mail', 'Border', slotFrame, _E and unpack(stack))
 		wipe(stack)
 
 		index = index + 1
@@ -45,7 +45,7 @@ local letter = function()
 		if(itemLink) then
 			local slotFrame = _G["OpenMailAttachmentButton"..i]
 
-			oGlowClassic:CallFilters('mail', slotFrame, _E and itemLink)
+			oGlowClassic:CallFilters('mail', 'Border', slotFrame, _E and itemLink)
 		end
 	end
 end

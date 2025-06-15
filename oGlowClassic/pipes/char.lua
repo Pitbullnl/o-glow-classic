@@ -1,7 +1,8 @@
 -- TODO:
 --  - Write a description.
 
-if(select(4, GetAddOnInfo("Fizzle"))) then return end
+local name, title, notes, enabled = C_AddOns.GetAddOnInfo("Fizzle")
+if enabled then return end
 
 local _E
 local hook
@@ -17,7 +18,7 @@ local update = function(self)
 			local slotFrame = _G['Character' .. slotName .. 'Slot']
 			local slotLink = GetInventoryItemLink('player', key)
 
-			oGlowClassic:CallFilters('char', slotFrame, _E and slotLink)
+			oGlowClassic:CallFilters('char', 'Border', slotFrame, _E and slotLink)
 		end
 	end
 end

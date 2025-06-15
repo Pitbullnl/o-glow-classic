@@ -4,14 +4,14 @@ local player = function(self, event, index)
 	local slotFrame = _G["TradePlayerItem"..index.."ItemButton"]
 	local slotLink = GetTradePlayerItemLink(index)
 
-	self:CallFilters('trade', slotFrame, _E and slotLink)
+	self:CallFilters('trade', 'Border', slotFrame, _E and slotLink)
 end
 
 local target = function(self, event, index)
 	local slotFrame = _G["TradeRecipientItem"..index.."ItemButton"]
 	local slotLink = GetTradeTargetItemLink(index)
 
-	self:CallFilters('trade', slotFrame, _E and slotLink)
+	self:CallFilters('trade', 'Border', slotFrame, _E and slotLink)
 end
 
 local update = function(self)

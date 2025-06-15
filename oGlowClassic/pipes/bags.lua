@@ -15,7 +15,7 @@ local pipe = function(self)
 			local slotFrame = _G[name .. 'Item' .. bid]
 			local slotLink = C_Container.GetContainerItemLink(id, i)
 
-			oGlowClassic:CallFilters('bags', slotFrame, _E and slotLink)
+			oGlowClassic:CallFilters('bags', 'Border', slotFrame, _E and slotLink)
 		end
 	end
 end

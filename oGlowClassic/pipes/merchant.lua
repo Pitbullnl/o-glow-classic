@@ -12,7 +12,7 @@ local update = function()
 				local itemLink = GetMerchantItemLink(index)
 				local slotFrame = _G['MerchantItem' .. i .. 'ItemButton']
 
-				oGlowClassic:CallFilters('merchant', slotFrame, _E and itemLink)
+				oGlowClassic:CallFilters('merchant', 'Border', slotFrame, _E and itemLink)
 			end
 
 			local buyBackLink = GetBuybackItemLink(GetNumBuybackItems())
@@ -22,7 +22,7 @@ local update = function()
 				local itemLink = GetBuybackItemLink(i)
 				local slotFrame = _G['MerchantItem' .. i .. 'ItemButton']
 
-				oGlowClassic:CallFilters('merchant', slotFrame, _E and itemLink)
+				oGlowClassic:CallFilters('merchant', 'Border', slotFrame, _E and itemLink)
 			end
 		end
 	end

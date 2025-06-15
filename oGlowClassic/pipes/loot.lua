@@ -12,7 +12,7 @@ local update = function()
 				itemLink = GetLootSlotLink(slot)
 			end
 
-			oGlowClassic:CallFilters('loot', slotFrame, _E and itemLink)
+			oGlowClassic:CallFilters('loot', 'Border', slotFrame, _E and itemLink)
 		end
 	end
 end
