@@ -3,7 +3,7 @@ local oGlowClassic = ns.oGlowClassic
 
 local colorTable = ns.colorTable
 
-local frame = CreateFrame('Frame', nil, InterfaceOptionsFramePanelContainer)
+local frame = CreateFrame('Frame')
 frame:Hide()
 frame.name = 'Filter: Quality'
 frame.parent = 'oGlowClassic'
@@ -79,8 +79,10 @@ function frame:CreateOptions()
 	end
 end
 
-local category, layout = Settings.RegisterCanvasLayoutCategory(frame, frame.name)
 
-Settings.RegisterAddOnCategory(category)
-
-category.ID = frame.name
+if Settings and SettingsPanel and ns.mainCategory then
+    local subcategory = Settings.RegisterCanvasLayoutSubcategory(ns.mainCategory, frame, frame.name)
+    Settings.RegisterAddOnCategory(subcategory)
+else
+    print("oGlowClassic Settings: Parent category not registered or Settings API unavailable!")
+end

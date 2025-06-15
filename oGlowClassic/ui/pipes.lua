@@ -1,7 +1,7 @@
 local _, ns = ...
 local oGlowClassic = ns.oGlowClassic
 
-local frame = CreateFrame('Frame', nil, InterfaceOptionsFramePanelContainer)
+local frame = CreateFrame('Frame')
 frame.name = 'oGlowClassic'
 frame:Hide()
 
@@ -32,7 +32,7 @@ end
 function frame:CreateOptions()
 	local title = ns.createFontString(self, 'GameFontNormalLarge')
 	title:SetPoint('TOPLEFT', 16, -16)
-	title:SetText'oGlowClassic'
+	title:SetText('oGlowClassic')
 
 	local subtitle = ns.createFontString(self)
 	subtitle:SetPoint('TOPLEFT', title, 'BOTTOMLEFT', 0, -8)
@@ -269,12 +269,14 @@ do
 end
 
 local category, layout = Settings.RegisterCanvasLayoutCategory(frame, frame.name)
-
 Settings.RegisterAddOnCategory(category)
-
-category.ID = frame.name
+ns.mainCategory = category
 
 SLASH_OGLOW_UI1 = '/oglow'
 SlashCmdList['OGLOW_UI'] = function()
-	InterfaceOptionsFrame_OpenToCategory'oGlowClassic'
+    if Settings and SettingsPanel then
+        Settings.OpenToCategory(ns.mainCategory)
+    else
+        InterfaceOptionsFrame_OpenToCategory('oGlowClassic')
+    end
 end
