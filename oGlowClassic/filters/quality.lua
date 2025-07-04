@@ -20,20 +20,22 @@ local qualityFunc = function(slot, ...)
         local itemLink = select(i, ...)
         if itemLink then
             local item = Item:CreateFromItemLink(itemLink)
-            pending = pending + 1
+            if not item:IsItemEmpty() then
+                pending = pending + 1
 
-            item:ContinueOnItemLoad(function()
-                local itemQuality = item:GetItemQuality()
-                if itemQuality then
-                    quality = math.max(quality, itemQuality)
-                end
+                item:ContinueOnItemLoad(function()
+                    local itemQuality = item:GetItemQuality()
+                    if itemQuality then
+                        quality = math.max(quality, itemQuality)
+                    end
 
-                pending = pending - 1
-                if pending == 0 and not completed then
-                    completed = true
-                    applyFilter()
-                end
-            end)
+                    pending = pending - 1
+                    if pending == 0 and not completed then
+                        completed = true
+                        applyFilter()
+                    end
+                end)
+            end
         end
     end
 
