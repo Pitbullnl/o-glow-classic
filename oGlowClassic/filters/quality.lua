@@ -61,7 +61,9 @@ oGlowClassic:RegisterFilter(
 )
 
 function oGlowClassic:ApplyBorder(slot, quality)
-    if not slot then return end
+    if not slot or not slot.CreateTexture then
+        return
+    end
     if not slot.oGlowBorder then
         local border = slot:CreateTexture(nil, "OVERLAY")
         border:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
