@@ -80,9 +80,11 @@ function frame:CreateOptions()
 end
 
 
-if Settings and SettingsPanel and ns.mainCategory then
-    local subcategory = Settings.RegisterCanvasLayoutSubcategory(ns.mainCategory, frame, frame.name)
-    Settings.RegisterAddOnCategory(subcategory)
-else
-    print("oGlowClassic Settings: Parent category not registered or Settings API unavailable!")
+if Settings and SettingsPanel then
+	ns.QueueSettingsSubcategory(function()
+		local subcategory = Settings.RegisterCanvasLayoutSubcategory(ns.mainCategory, frame, frame.name)
+		Settings.RegisterAddOnCategory(subcategory)
+	end)
+elseif InterfaceOptions_AddCategory then
+	InterfaceOptions_AddCategory(frame)
 end

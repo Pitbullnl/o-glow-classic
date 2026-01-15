@@ -39,31 +39,53 @@ function frame:CreateOptions()
 	subtitle:SetPoint('RIGHT', self, -32, 0)
 	subtitle:SetText'Now with 30% less toxic radiation!'
 
-	local scroll = CreateFrame("ScrollFrame", nil, self, "ScrollFrameTemplate")
+	local scroll = CreateFrame("ScrollFrame", "oGlowClassicOptionsScrollFrame", self, "UIPanelScrollFrameTemplate")
 	scroll:SetPoint('TOPLEFT', subtitle, 'BOTTOMLEFT', 0, -8)
 	scroll:SetPoint("BOTTOMRIGHT", 0, 4)
+	self.scroll = scroll
 
-	local scrollchild = CreateFrame("Frame", nil, self)
+	local scrollBar = scroll.ScrollBar or _G[scroll:GetName() .. "ScrollBar"]
+	if scrollBar then
+		scrollBar:ClearAllPoints()
+		scrollBar:SetPoint('TOPRIGHT', self, -6, -68)
+		scrollBar:SetPoint('BOTTOMRIGHT', self, -6, 10)
+	end
+
+	local scrollchild = CreateFrame("Frame", nil, scroll)
 	scrollchild.rows = {}
-	scrollchild:SetPoint"LEFT"
-	scrollchild:SetHeight(scroll:GetHeight())
-	-- So we have correct spacing on the right side.
-	scrollchild:SetWidth(scroll:GetWidth() -16)
+	scrollchild:SetPoint('TOPLEFT', 0, 0)
+	do
+		local scrollBarWidth = (scrollBar and scrollBar:GetWidth()) or 16
+		scrollchild:SetPoint('TOPRIGHT', -(scrollBarWidth + 6), 0)
+	end
+	scrollchild:SetHeight(1)
 	self.scrollchild = scrollchild
 
 	local filterFrame = CreateFrame('Frame', nil, self)
 	filterFrame.rows = {}
+	filterFrame:Hide()
 	self.filterFrame = filterFrame
 
 	scroll:SetScrollChild(scrollchild)
-	scroll:UpdateScrollChildRect()
 	scroll:EnableMouseWheel(true)
 
-	scroll.value = 0
 	scroll:SetVerticalScroll(0)
-	scrollchild:SetPoint('TOP', 0, 0)
 
 	self:refresh()
+
+	local function updateScrollChildWidth()
+		if not self.scroll or not self.scrollchild then return end
+		local sb = self.scroll.ScrollBar or (self.scroll.GetName and _G[self.scroll:GetName() .. "ScrollBar"])
+		local sbw = (sb and sb:GetWidth()) or 16
+		local w = self.scroll:GetWidth() - sbw - 12
+		if w > 0 then
+			self.scrollchild:SetWidth(w)
+		end
+	end
+
+	scroll:HookScript('OnShow', updateScrollChildWidth)
+	scroll:HookScript('OnSizeChanged', updateScrollChildWidth)
+	updateScrollChildWidth()
 end
 
 do
@@ -93,22 +115,23 @@ do
 		self.owner.active = self
 
 		local filterFrame = self.owner.filterFrame
+		if not filterFrame then return end
 		filterFrame.pipe = self.pipe
 
 		filterFrame:Show()
 		filterFrame:SetParent(self)
 
 		filterFrame:ClearAllPoints()
-		filterFrame:SetPoint('TOP', self.check, 'BOTTOM')
+		filterFrame:SetPoint('TOP', self.check, 'BOTTOM', 0, -2)
 		filterFrame:SetPoint('LEFT', 16, 0)
 		filterFrame:SetPoint('RIGHT', -16, 0)
 
-		self:SetHeight(filterFrame:GetHeight())
+		self:SetHeight(20 + filterFrame:GetHeight())
 
-		for i=1, #filterFrame do
+		for i = 1, #filterFrame do
 			local filter = filterFrame[i]
 			filter:SetChecked(nil)
-			for name, type, desc in oGlowClassic.IterateFiltersOnPipe(self.pipe) do
+			for name in oGlowClassic.IterateFiltersOnPipe(self.pipe) do
 				filter:SetChecked(filter.name == name)
 			end
 		end
@@ -117,16 +140,18 @@ do
 			local rows = self.owner.scrollchild.rows
 			local n = 1
 			local row = rows[n]
-			while(row) do
-				if(row ~= self.owner.active) then
+			while row do
+				if row ~= self.owner.active then
 					row:SetBackdropBorderColor(.3, .3, .3)
-					row:SetHeight(24)
+					row:SetHeight(20)
 				end
-
 				n = n + 1
 				row = rows[n]
 			end
 		end
+
+		self.owner:UpdateScrollChildSize()
+		self.owner.scroll:UpdateScrollChildRect()
 	end
 
 	local Row_OnEnter = function(self)
@@ -137,9 +162,7 @@ do
 	end
 
 	local Row_OnLeave = function(self)
-		if(self ~= self.owner.active) then
-			self:SetBackdropBorderColor(.3, .3, .3)
-		end
+		self:SetBackdropBorderColor(.3, .3, .3)
 
 		GameTooltip_Hide()
 	end
@@ -152,14 +175,14 @@ do
 		row:SetBackdropBorderColor(.3, .3, .3)
 
 		if(i == 1) then
-			row:SetPoint('TOP', 0, -8)
+			row:SetPoint('TOP', 0, -4)
 		else
 			row:SetPoint('TOP', parent.rows[i - 1], 'BOTTOM')
 		end
 
 		row:SetPoint('LEFT', 6, 0)
 		row:SetPoint('RIGHT', -6, 0)
-		row:SetHeight(24)
+		row:SetHeight(20)
 
 		row:SetScript('OnEnter', Row_OnEnter)
 		row:SetScript('OnLeave', Row_OnLeave)
@@ -167,7 +190,7 @@ do
 
 		local check = createCheckBox(row)
 		check:SetPoint('LEFT', 10, 0)
-		check:SetPoint('TOP', 0, -4)
+		check:SetPoint('TOP', 0, -2)
 		check:SetScript('OnClick', CheckBox_OnClick)
 		row.check = check
 
@@ -179,16 +202,28 @@ do
 		return row
 	end
 
+	function frame:UpdateScrollChildSize()
+		local sChild = self.scrollchild
+		if not sChild then return end
+
+		local height = 8 -- top + bottom padding
+		for i = 1, #sChild.rows do
+			local row = sChild.rows[i]
+			if row and row:IsShown() then
+				height = height + row:GetHeight()
+			end
+		end
+
+		sChild:SetHeight(height)
+	end
+
 	function frame:refresh()
 		local sChild = self.scrollchild
 		local filterFrame = self.filterFrame
-
-		-- Check if filterFrame is not nil
 		if not filterFrame then
 			return
 		end
 
-		-- XXX: Rewrite this to use oGlowClassic:GetNumFilters()
 		local filters = {}
 		for name, type, desc in oGlowClassic.IterateFilters() do
 			table.insert(filters, {name = name; type = type, desc = desc})
@@ -197,35 +232,22 @@ do
 		local numFilters = #filters
 		local split = 2
 		if(numFilters > 1) then
-			-- You know.. after writing this.. I considered that I could just forget
-			-- about how the items had been ordered, and just do:
-			-- Item 1 <space> Item 2
-			-- Item 3 <space> [...]
-			--
-			-- But no! I had to do it like this... Ironically the filter order is...
-			-- UNDEFINED :D
-			--
-			-- Yes I almost fell of my chair when I discovered that :3 I'll just leave
-			-- this here as an reminder of the torment that was figuring out an integer
-			-- sequence that would satisfy my OCD.
-			--
-			-- Hopefully I'll get use for this later in some obscure scenario!
 			split = math.floor(numFilters / 2) + (numFilters % 2) + 1
 		end
 
-		for i=1, numFilters do
+		for i = 1, numFilters do
 			local filter = filters[i]
 			local check = filterFrame[i]
-			if(not check) then
+			if not check then
 				check = createCheckBox(filterFrame)
 				filterFrame[i] = check
 			end
 
 			check:ClearAllPoints()
 			if(i == 1) then
-				check:SetPoint('TOPLEFT', 16, -2)
+				check:SetPoint('TOPLEFT', 0, -2)
 			elseif(i == split) then
-				check:SetPoint('TOP', 16, -2)
+				check:SetPoint('TOP', 0, -2)
 			else
 				check:SetPoint('TOP', filterFrame[i - 1], 'BOTTOM')
 			end
@@ -233,8 +255,8 @@ do
 			check:SetScript('OnClick', Filter_OnClick)
 
 			local label = check.label
-			if(not label) then
-				label =  ns.createFontString(check)
+			if not label then
+				label = ns.createFontString(check)
 				label:SetPoint('LEFT', check, 'RIGHT', 5, -1)
 				check.label = label
 			end
@@ -244,11 +266,10 @@ do
 			check.desc = filter.desc
 			check.type = filter.type
 			filterFrame[i] = check
+			check:Show()
 		end
 
-		-- We set split to 2 above (which makes this work correctly for
-		-- numFilters == 1.
-		filterFrame:SetHeight(((split-1) * 16) + 28)
+		filterFrame:SetHeight(((split-1) * 16) + 18)
 		filterFrame:Hide()
 
 		local n = 1
@@ -262,19 +283,43 @@ do
 			row.pipe = pipe
 			row.check:SetChecked(active)
 			row.label:SetText(name)
+			row:Show()
+			row:SetHeight(20)
 
 			n = n + 1
+		end
+
+		for i = n, #sChild.rows do
+			sChild.rows[i]:Hide()
+		end
+
+		if self.active and self.active:IsShown() then
+			Row_OnClick(self.active)
+		else
+			self:UpdateScrollChildSize()
+			self.scroll:UpdateScrollChildRect()
 		end
 	end
 end
 
-local category, layout = Settings.RegisterCanvasLayoutCategory(frame, frame.name)
-Settings.RegisterAddOnCategory(category)
-ns.mainCategory = category
+if Settings and SettingsPanel then
+	ns.QueueSettingsRegistration(function()
+		local category = Settings.RegisterCanvasLayoutCategory(frame, frame.name)
+		Settings.RegisterAddOnCategory(category)
+		ns.mainCategory = category
+		ns.FlushSettingsRegistrations()
+	end)
+elseif InterfaceOptions_AddCategory then
+	InterfaceOptions_AddCategory(frame)
+	ns.mainCategory = frame
+end
 
 SLASH_OGLOW_UI1 = '/oglow'
 SlashCmdList['OGLOW_UI'] = function()
     if Settings and SettingsPanel then
+		if not ns.mainCategory then
+			ns.FlushSettingsRegistrations()
+		end
         Settings.OpenToCategory(ns.mainCategory)
     else
         InterfaceOptionsFrame_OpenToCategory('oGlowClassic')

@@ -1,5 +1,6 @@
 local _, ns = ...
 local oGlowClassic = ns.oGlowClassic
+local colorTable = ns.colorTable
 local threshold = 1
 
 local qualityFunc = function(slot, ...)
@@ -65,17 +66,36 @@ function oGlowClassic:ApplyBorder(slot, quality)
         return
     end
     if not slot.oGlowBorder then
-        local border = slot:CreateTexture(nil, "OVERLAY")
+        local owner = slot
+        if slot.GetClipsChildren and slot:GetClipsChildren() then
+            local parent = slot:GetParent()
+            if parent and parent.CreateTexture then
+                if not slot.oGlowBorderFrame then
+                    local frame = CreateFrame("Frame", nil, parent)
+                    frame:SetFrameStrata(slot:GetFrameStrata())
+                    frame:SetFrameLevel(slot:GetFrameLevel() + 10)
+                    slot.oGlowBorderFrame = frame
+                end
+                owner = slot.oGlowBorderFrame
+            end
+        end
+
+        local border = owner:CreateTexture(nil, "OVERLAY")
         border:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
         border:SetBlendMode("ADD")
         border:SetAlpha(0.8)
-        border:SetSize(slot:GetWidth() * 1.6, slot:GetHeight() * 1.6)
-        border:SetPoint("CENTER", slot, "CENTER")
+        border:SetSize(70, 70)
+        border:SetPoint("CENTER", slot, "CENTER", 0, 0)
         slot.oGlowBorder = border
     end
 
-    local r, g, b = C_Item.GetItemQualityColor(quality)
-    slot.oGlowBorder:SetVertexColor(r, g, b)
+    local rgb = colorTable and colorTable[quality]
+    if rgb then
+        slot.oGlowBorder:SetVertexColor(rgb[1], rgb[2], rgb[3])
+    else
+        local r, g, b = C_Item.GetItemQualityColor(quality)
+        slot.oGlowBorder:SetVertexColor(r, g, b)
+    end
     slot.oGlowBorder:Show()
 end
 

@@ -7,7 +7,8 @@ DEFAULT_VARIANTS=(era mop)
 
 declare -A INTERFACE_FOR_VARIANT=(
   [era]=11508
-  [mop]=50502
+  [tbc]=20505
+  [mop]=50503
 )
 
 version=$(awk -F': *' '/^## Version:/ {print $2; exit}' "$ADDON_DIR/oGlowClassic.toc")

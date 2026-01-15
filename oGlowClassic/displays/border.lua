@@ -5,14 +5,23 @@ local argcheck = oGlowClassic.argcheck
 local colorTable = ns.colorTable
 
 local createBorder = function(self, point)
-    print("createBorder!")
 	local bc = self.oGlowClassicBorder
 	if(not bc) then
-		if(not self:IsObjectType'Frame') then
-			bc = self:GetParent():CreateTexture(nil, 'OVERLAY')
-		else
-			bc = self:CreateTexture(nil, "OVERLAY")
+		local owner = self
+		if self.GetClipsChildren and self:GetClipsChildren() then
+			local parent = self.GetParent and self:GetParent()
+			if parent and parent.CreateTexture then
+				if not self.oGlowClassicBorderFrame then
+					local frame = CreateFrame("Frame", nil, parent)
+					frame:SetFrameStrata(self:GetFrameStrata())
+					frame:SetFrameLevel(self:GetFrameLevel() + 10)
+					self.oGlowClassicBorderFrame = frame
+				end
+				owner = self.oGlowClassicBorderFrame
+			end
 		end
+
+		bc = owner:CreateTexture(nil, 'OVERLAY')
 
 		bc:SetTexture"Interface\\Buttons\\UI-ActionButton-Border"
 		bc:SetBlendMode"ADD"

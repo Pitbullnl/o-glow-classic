@@ -7,6 +7,66 @@ ns.createFontString = function(parent, template)
     return label
 end
 
+do
+    local function flushSettingsRegistrations()
+        if not (Settings and SettingsPanel) then
+            return
+        end
+
+        local queue = ns._settingsRegistrationQueue
+        if queue and #queue > 0 then
+            for i = 1, #queue do
+                queue[i]()
+            end
+            wipe(queue)
+        end
+
+        if not ns.mainCategory then
+            return
+        end
+
+        local subQueue = ns._settingsSubcategoryQueue
+        if subQueue and #subQueue > 0 then
+            for i = 1, #subQueue do
+                subQueue[i]()
+            end
+            wipe(subQueue)
+        end
+    end
+
+    ns.QueueSettingsRegistration = function(fn)
+        if Settings and SettingsPanel then
+            fn()
+            return
+        end
+
+        if not ns._settingsRegistrationQueue then
+            ns._settingsRegistrationQueue = {}
+        end
+        table.insert(ns._settingsRegistrationQueue, fn)
+    end
+
+    ns.QueueSettingsSubcategory = function(fn)
+        if Settings and SettingsPanel and ns.mainCategory then
+            fn()
+            return
+        end
+
+        if not ns._settingsSubcategoryQueue then
+            ns._settingsSubcategoryQueue = {}
+        end
+        table.insert(ns._settingsSubcategoryQueue, fn)
+    end
+
+    ns.FlushSettingsRegistrations = flushSettingsRegistrations
+
+    oGlowClassic:RegisterEvent('ADDON_LOADED', function(self, event, addon)
+        if addon == 'Blizzard_Settings' then
+            flushSettingsRegistrations()
+        end
+    end)
+end
+
 ns.Hex = function(r, g, b)
     if type(r) == "table" then
         if r.r then
