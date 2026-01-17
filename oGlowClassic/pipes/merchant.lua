@@ -16,7 +16,7 @@ local update = function()
 			end
 
 			local buyBackLink = GetBuybackItemLink(GetNumBuybackItems())
-			oGlowClassic:CallFilters('merchant', MerchantBuyBackItemItemButton, _E and buyBackLink)
+			oGlowClassic:CallFilters('merchant', 'Border', MerchantBuyBackItemItemButton, _E and buyBackLink)
 		else
 			for i=1, BUYBACK_ITEMS_PER_PAGE do
 				local itemLink = GetBuybackItemLink(i)

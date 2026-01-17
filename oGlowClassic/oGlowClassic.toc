@@ -6,7 +6,7 @@
 ## X-Min-Interface-Mop: 50503
 ## Title: oGlowClassic
 ## Author: Haste, sbd74, pitbullnl91 (updated for WotLK/cata/MoP Classic)
-## Version: 0.3.9
+## Version: 0.3.10
 ## SavedVariables: oGlowClassicDB
 ## Notes: Make your shiny items... glow in the dark!
 ## X-Website: https://www.curseforge.com/wow/addons/oglowclassic

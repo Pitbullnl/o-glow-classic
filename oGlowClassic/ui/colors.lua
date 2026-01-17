@@ -18,6 +18,8 @@ function frame:CreateOptions()
 	title:SetPoint('TOPLEFT', 16, -16)
 	title:SetText'oGlowClassic: Colors'
 
+	local questLabel = QUEST_ITEMS or ITEM_CLASS_QUESTITEM or 'Quest items'
+
 	local backdrop = {
 		bgFile = [[Interface\ChatFrame\ChatFrameBackground]], tile = true, tileSize = 16,
 		edgeFile = [[Interface\Tooltips\UI-Tooltip-Border]], edgeSize = 16,
@@ -33,10 +35,10 @@ function frame:CreateOptions()
 	box:SetPoint'LEFT'
 	box:SetPoint('RIGHT', -30, 0)
 
-	local title = ns.createFontString(self)
-	title:SetPoint('BOTTOMLEFT', box, 'TOPLEFT', 8, 0)
-	title:SetText('Item colors')
-	box.title = title
+	local boxTitle = ns.createFontString(self)
+	boxTitle:SetPoint('BOTTOMLEFT', box, 'TOPLEFT', 8, 0)
+	boxTitle:SetText('Item colors')
+	box.title = boxTitle
 
 	local bTitle = ns.createFontString(self)
 	bTitle:SetPoint('BOTTOMRIGHT', box, 'TOPRIGHT', -35 - 16 - 5, 0)
@@ -86,7 +88,6 @@ function frame:CreateOptions()
 	end
 
 	local Label_Update = function(self)
-
 		local row = self:GetParent()
 
 		local r = row.redLabel:GetNumber() / 255
@@ -121,23 +122,25 @@ function frame:CreateOptions()
 	end
 
 	local rows = {}
-	for i=0, 7 do
+	local rowsById = {}
+
+	local function createRow(id, prevRow)
 		local row = CreateFrame('Button', nil, box, "BackdropTemplate")
 
 		row:SetBackdrop(backdrop)
 		row:SetBackdropBorderColor(.3, .3, .3)
 		row:SetBackdropColor(.1, .1, .1, .5)
 
-		if(i == 0) then
+		if(not prevRow) then
 			row:SetPoint('TOP', 0, -8)
 		else
-			row:SetPoint('TOP', rows[i-1], 'BOTTOM')
+			row:SetPoint('TOP', prevRow, 'BOTTOM')
 		end
 		row:SetPoint('LEFT', 6, 0)
 		row:SetPoint('RIGHT', -25, 0)
 		row:SetHeight(24)
 
-		local swatch = ns.createColorSwatch(row, i)
+		local swatch = ns.createColorSwatch(row, id)
 		swatch:SetPoint('RIGHT', -10, 0)
 
 		swatch.swatchFunc = Swatch_Ok
@@ -195,20 +198,37 @@ function frame:CreateOptions()
 		reset:SetScript("OnLeave", GameTooltip_Hide)
 		row.reset = reset
 
-		row.id = i
-		rows[i] = row
+		row.id = id
+
+		table.insert(rows, row)
+		rowsById[id] = row
+
+		return row
 	end
+
+	for i=0, 7 do
+		createRow(i, rows[#rows])
+	end
+	createRow('quest', rows[#rows])
+
 	box.rows = rows
-	box:SetHeight(8 * 24 + 16)
+	box:SetHeight(#rows * 24 + 16)
 
 	function frame:refresh()
 		for i=0, 7 do
 			local r, g, b = unpack(colorTable[i])
-			local row = rows[i]
+			local row = rowsById[i]
 			row.nameLabel:SetText(_G['ITEM_QUALITY' .. i .. '_DESC'])
 			Swatch_Update(row.swatch, false, r, g, b)
 		end
+
+		local row = rowsById.quest
+		row.nameLabel:SetText(questLabel)
+
+		local color = rawget(colorTable, 'quest') or { 1, 0.82, 0 }
+		Swatch_Update(row.swatch, false, unpack(color))
 	end
+
 	self:refresh()
 end
 

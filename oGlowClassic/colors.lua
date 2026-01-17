@@ -3,6 +3,10 @@ local oGlowClassic = ns.oGlowClassic
 
 local argcheck = oGlowClassic.argcheck
 
+local defaultColors = {
+	quest = { 1, 0.82, 0 },
+}
+
 local colorTable = setmetatable(
 	{},
 
@@ -11,7 +15,9 @@ local colorTable = setmetatable(
 	-- the add-on if any new item colors are added. It also caches unlike the old
 	-- version.
     {__index = function(self, val)
-        argcheck(val, 2, 'number')
+        if type(val) ~= 'number' then
+            return nil
+        end
 
         local r, g, b = C_Item.GetItemQualityColor(val)
 --         if not r then
@@ -48,7 +54,17 @@ function oGlowClassic:ResetColor(name)
 	oGlowClassicDB.Colors[name] = nil
 	colorTable[name] = nil
 
-	return unpack(colorTable[name])
+	if type(name) == 'number' then
+		return unpack(colorTable[name])
+	end
+
+	local default = defaultColors[name]
+	if default then
+		self:RegisterColor(name, unpack(default))
+		return unpack(default)
+	end
+
+	return 1, 1, 1
 end
 
 ns.colorTable = colorTable

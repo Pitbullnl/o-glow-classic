@@ -25,16 +25,24 @@ function frame:CreateOptions()
 	local thesDDown = CreateFrame('Button', 'oGlowClassicOptFQualityThreshold', self, 'UIDropDownMenuTemplate')
 	thesDDown:SetPoint('TOPLEFT', thresLabel, 'BOTTOMLEFT', -16, 0)
 
-	do
-		local DropDown_OnClick = function(self)
-			oGlowClassicDB.FilterSettings.quality = self.value - 1
-			oGlowClassic:CallOptionCallbacks()
+	local questCheckbox = CreateFrame('CheckButton', nil, self, 'InterfaceOptionsCheckButtonTemplate')
+	questCheckbox:SetPoint('TOPLEFT', thesDDown, 'BOTTOMLEFT', 16, -8)
+	questCheckbox.Text:SetText('Quest item override')
 
+	do
+		local updateAllActivePipes = function()
 			for pipe, active, name, desc in oGlowClassic.IteratePipes() do
 				if(active) then
 					oGlowClassic:UpdatePipe(pipe)
 				end
 			end
+		end
+
+		local DropDown_OnClick = function(self)
+			oGlowClassicDB.FilterSettings.quality = self.value - 1
+			oGlowClassic:CallOptionCallbacks()
+
+			updateAllActivePipes()
 			UIDropDownMenu_SetSelectedID(self:GetParent().dropdown, self:GetID())
 		end
 
@@ -55,6 +63,22 @@ function frame:CreateOptions()
 			UIDropDownMenu_SetSelectedID(thesDDown, threshold + 2)
 		end
 
+		local UpdateQuestCheckbox = function()
+			local filters = oGlowClassicDB.FilterSettings
+			local enabled = not (filters and filters.questItems == false)
+			questCheckbox:SetChecked(enabled)
+		end
+
+		local Quest_OnClick = function(self)
+			if not oGlowClassicDB.FilterSettings then
+				oGlowClassicDB.FilterSettings = {}
+			end
+
+			oGlowClassicDB.FilterSettings.questItems = self:GetChecked() and true or false
+			oGlowClassic:CallOptionCallbacks()
+			updateAllActivePipes()
+		end
+
 		local DropDown_init = function(self)
 			local info
 
@@ -71,9 +95,17 @@ function frame:CreateOptions()
 		thesDDown:SetScript('OnEnter', DropDown_OnEnter)
 		thesDDown:SetScript('OnLeave', DropDown_OnLeave)
 
+		questCheckbox:SetScript('OnClick', Quest_OnClick)
+		questCheckbox:SetScript('OnEnter', function(self)
+			GameTooltip:SetOwner(self, 'ANCHOR_TOPLEFT')
+			GameTooltip:SetText('If enabled, quest items use the quest-item color instead of the quality color.', nil, nil, nil, nil, 1)
+		end)
+		questCheckbox:SetScript('OnLeave', DropDown_OnLeave)
+
 		function frame:refresh()
 			UIDropDownMenu_Initialize(thesDDown, DropDown_init)
 			UpdateSelected()
+			UpdateQuestCheckbox()
 		end
 		self:refresh()
 	end

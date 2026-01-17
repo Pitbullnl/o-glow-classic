@@ -73,6 +73,10 @@ local ADDON_LOADED = function(self, event, addon)
 			end
 		end
 
+		if not oGlowClassicDB.Colors.quest then
+			oGlowClassic:RegisterColor('quest', 1, 0.82, 0)
+		end
+
 		self:CallOptionCallbacks()
 
         print("v" .. _VERSION .. " loaded.")

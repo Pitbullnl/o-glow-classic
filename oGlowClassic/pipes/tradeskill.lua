@@ -8,7 +8,7 @@ local pipe = function(id)
 	local itemLink = GetTradeSkillItemLink(id)
 
 	if(itemLink) then
-		oGlowClassic:CallFilters('tradeskill', TradeSkillSkillIcon, _E and itemLink)
+		oGlowClassic:CallFilters('tradeskill', 'Border', TradeSkillSkillIcon, _E and itemLink)
 	end
 
 	for i=1, GetTradeSkillNumReagents(id) do

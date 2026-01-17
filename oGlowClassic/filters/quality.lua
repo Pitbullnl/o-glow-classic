@@ -2,15 +2,40 @@ local _, ns = ...
 local oGlowClassic = ns.oGlowClassic
 local colorTable = ns.colorTable
 local threshold = 1
+local questEnabled = true
+
+local function isQuestItemLink(itemLink)
+    if not itemLink then
+        return false
+    end
+
+    local itemInfoFunc = (C_Item and C_Item.GetItemInfo) or GetItemInfo
+    if not itemInfoFunc then
+        return false
+    end
+
+    local itemType = select(6, itemInfoFunc(itemLink))
+    local classID = select(12, itemInfoFunc(itemLink))
+
+    if classID and _G.LE_ITEM_CLASS_QUESTITEM and classID == _G.LE_ITEM_CLASS_QUESTITEM then
+        return true
+    end
+
+    local questType = _G.ITEM_CLASS_QUESTITEM or 'Quest'
+    return itemType == questType
+end
 
 local qualityFunc = function(slot, ...)
 
     local quality = -1
+    local hasQuestItem = false
     local pending = 0
     local completed = false
 
     local function applyFilter()
-        if quality > threshold then
+        if questEnabled and hasQuestItem and rawget(colorTable, 'quest') then
+            oGlowClassic:ApplyBorder(slot, 'quest')
+        elseif quality > threshold then
             oGlowClassic:ApplyBorder(slot, quality)
         else
             oGlowClassic:ClearBorder(slot)
@@ -28,6 +53,13 @@ local qualityFunc = function(slot, ...)
                     local itemQuality = item:GetItemQuality()
                     if itemQuality then
                         quality = math.max(quality, itemQuality)
+                    end
+
+                    if not hasQuestItem then
+                        local link = item:GetItemLink() or itemLink
+                        if isQuestItemLink(link) then
+                            hasQuestItem = true
+                        end
                     end
 
                     pending = pending - 1
@@ -52,6 +84,8 @@ oGlowClassic:RegisterOptionCallback(function(db)
     else
         threshold = 1
     end
+
+    questEnabled = not (filters and filters.questItems == false)
 end)
 
 oGlowClassic:RegisterFilter(
@@ -89,12 +123,20 @@ function oGlowClassic:ApplyBorder(slot, quality)
         slot.oGlowBorder = border
     end
 
-    local rgb = colorTable and colorTable[quality]
+    local rgb
+    if type(quality) == 'number' then
+        rgb = colorTable and colorTable[quality]
+    else
+        rgb = colorTable and rawget(colorTable, quality)
+    end
+
     if rgb then
         slot.oGlowBorder:SetVertexColor(rgb[1], rgb[2], rgb[3])
-    else
+    elseif type(quality) == 'number' then
         local r, g, b = C_Item.GetItemQualityColor(quality)
         slot.oGlowBorder:SetVertexColor(r, g, b)
+    else
+        return
     end
     slot.oGlowBorder:Show()
 end
