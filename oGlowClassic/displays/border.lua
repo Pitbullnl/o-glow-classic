@@ -4,6 +4,22 @@ local oGlowClassic = ns.oGlowClassic
 local argcheck = oGlowClassic.argcheck
 local colorTable = ns.colorTable
 
+local updateBorderSize = function(border, owner)
+	if not (border and owner and UIParent and UIParent.GetEffectiveScale and owner.GetEffectiveScale) then
+		return
+	end
+
+	local uiScale = UIParent:GetEffectiveScale()
+	local ownerScale = owner:GetEffectiveScale()
+
+	if type(uiScale) ~= "number" or uiScale <= 0 or type(ownerScale) ~= "number" or ownerScale <= 0 then
+		return
+	end
+
+	local scaleFix = uiScale / ownerScale
+	border:SetSize(70 * scaleFix, 70 * scaleFix)
+end
+
 local createBorder = function(self, point)
 	local bc = self.oGlowClassicBorder
 	if(not bc) then
@@ -21,17 +37,16 @@ local createBorder = function(self, point)
 			end
 		end
 
-		bc = owner:CreateTexture(nil, 'OVERLAY')
+		bc = owner:CreateTexture(nil, 'OVERLAY', nil, 7)
 
 		bc:SetTexture"Interface\\Buttons\\UI-ActionButton-Border"
 		bc:SetBlendMode"ADD"
 		bc:SetAlpha(.8)
 
-		bc:SetWidth(70)
-		bc:SetHeight(70)
-
 		bc:SetPoint("CENTER", point or self)
 		self.oGlowClassicBorder = bc
+
+		updateBorderSize(bc, owner)
 	end
 
 	return bc
@@ -40,6 +55,7 @@ end
 local borderDisplay = function(frame, color)
 	if(color) then
 		local bc = createBorder(frame)
+		updateBorderSize(bc, bc:GetParent() or frame)
 		local rgb = colorTable[color]
 
 		if(rgb) then

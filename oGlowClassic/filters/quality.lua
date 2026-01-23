@@ -4,25 +4,181 @@ local colorTable = ns.colorTable
 local threshold = 1
 local questEnabled = true
 
-local function isQuestItemLink(itemLink)
-    if not itemLink then
-        return false
+local function updateBorderSize(border, owner)
+	    if not (border and owner and UIParent and UIParent.GetEffectiveScale and owner.GetEffectiveScale) then
+	        return
+	    end
+
+    local uiScale = UIParent:GetEffectiveScale()
+    local ownerScale = owner:GetEffectiveScale()
+
+    if type(uiScale) ~= "number" or uiScale <= 0 or type(ownerScale) ~= "number" or ownerScale <= 0 then
+        return
     end
 
-    local itemInfoFunc = (C_Item and C_Item.GetItemInfo) or GetItemInfo
-    if not itemInfoFunc then
-        return false
-    end
+    local scaleFix = uiScale / ownerScale
+	border:SetSize(70 * scaleFix, 70 * scaleFix)
+end
 
-    local itemType = select(6, itemInfoFunc(itemLink))
-    local classID = select(12, itemInfoFunc(itemLink))
+local questCacheByItemID = {}
 
-    if classID and _G.LE_ITEM_CLASS_QUESTITEM and classID == _G.LE_ITEM_CLASS_QUESTITEM then
-        return true
-    end
+local function isQuestItemByTooltip(itemLink, itemID)
+	if not (C_TooltipInfo and (C_TooltipInfo.GetHyperlink or C_TooltipInfo.GetItemByID)) then
+		return false
+	end
 
-    local questType = _G.ITEM_CLASS_QUESTITEM or 'Quest'
-    return itemType == questType
+	local tooltipInfo
+	if itemLink and C_TooltipInfo.GetHyperlink then
+		tooltipInfo = C_TooltipInfo.GetHyperlink(itemLink)
+	elseif itemID and C_TooltipInfo.GetItemByID then
+		tooltipInfo = C_TooltipInfo.GetItemByID(itemID)
+	end
+
+	if not (tooltipInfo and tooltipInfo.lines) then
+		return false
+	end
+
+	local questItemText = _G.ITEM_BIND_QUEST
+	local startsQuestText = _G.ITEM_STARTS_QUEST
+	for _, line in ipairs(tooltipInfo.lines) do
+		local leftText = line and line.leftText
+		if leftText then
+			if questItemText and leftText:find(questItemText, 1, true) then
+				return true
+			end
+			if startsQuestText and leftText:find(startsQuestText, 1, true) then
+				return true
+			end
+			-- Fallback for cases where globals aren't present/complete.
+			if leftText == "Quest Item" or leftText == "Starts a Quest" then
+				return true
+			end
+		end
+	end
+
+	return false
+end
+
+local function isQuestItem(itemLinkOrID)
+	if not itemLinkOrID then
+		return false
+	end
+
+	local itemLink = type(itemLinkOrID) == "string" and itemLinkOrID or nil
+	local itemID = type(itemLinkOrID) == "number" and itemLinkOrID or nil
+
+	-- Fast path: item info instant classification.
+	if C_Item and C_Item.GetItemInfoInstant then
+		local classID = select(6, C_Item.GetItemInfoInstant(itemLinkOrID))
+		if classID ~= nil then
+			local questClass = (Enum and Enum.ItemClass and Enum.ItemClass.Questitem) or _G.LE_ITEM_CLASS_QUESTITEM
+			if questClass ~= nil and classID == questClass then
+				return true
+			end
+		end
+	end
+
+	-- Cache by itemID when possible to avoid repeated tooltip scans.
+	if not itemID and itemLink and C_Item and C_Item.GetItemInfoInstant then
+		itemID = select(1, C_Item.GetItemInfoInstant(itemLink))
+	end
+
+	if itemID and questCacheByItemID[itemID] ~= nil then
+		return questCacheByItemID[itemID]
+	end
+
+	local isQuest = isQuestItemByTooltip(itemLink, itemID)
+	if itemID then
+		questCacheByItemID[itemID] = isQuest
+	end
+	return isQuest
+end
+
+local function scheduleDelayedBorderSizeRefresh(slot)
+	if not (slot and slot.oGlowClassicIsBaganator and C_Timer and C_Timer.After) then
+		return
+	end
+
+	if slot.oGlowClassicPendingScaleFix then
+		return
+	end
+	slot.oGlowClassicPendingScaleFix = true
+
+	local function refresh()
+		if slot and slot.oGlowBorder then
+			updateBorderSize(slot.oGlowBorder, slot.oGlowBorder:GetParent() or slot)
+		end
+	end
+
+	C_Timer.After(0, refresh)
+	C_Timer.After(0.1, function()
+		refresh()
+		if slot then
+			slot.oGlowClassicPendingScaleFix = nil
+		end
+	end)
+end
+
+local function scheduleDelayedBaganatorIconBorderOverride(slot)
+	if not (slot and slot.oGlowClassicIsBaganator and C_Timer and C_Timer.After) then
+		return
+	end
+
+	if slot.oGlowClassicPendingIconBorderFix then
+		return
+	end
+	slot.oGlowClassicPendingIconBorderFix = true
+
+	local function apply()
+		if not slot then
+			return
+		end
+
+		local filters = oGlowClassicDB and oGlowClassicDB.FilterSettings
+		local overrideBorder = not (filters and filters.baganatorOverride == false)
+
+		if slot.IconBorder then
+			if overrideBorder and slot.oGlowBorder and slot.oGlowBorder:IsShown() then
+				if slot.oGlowClassicIconBorderAlpha == nil then
+					slot.oGlowClassicIconBorderAlpha = slot.IconBorder:GetAlpha()
+				end
+				slot.IconBorder:SetAlpha(0)
+			elseif slot.oGlowClassicIconBorderAlpha ~= nil then
+				slot.IconBorder:SetAlpha(slot.oGlowClassicIconBorderAlpha)
+				slot.oGlowClassicIconBorderAlpha = nil
+			end
+		end
+	end
+
+	C_Timer.After(0, apply)
+	C_Timer.After(0.1, function()
+		apply()
+		if slot then
+			slot.oGlowClassicPendingIconBorderFix = nil
+		end
+	end)
+end
+
+local function normalizeItemLink(itemLinkOrID)
+	if not itemLinkOrID then
+		return nil
+	end
+
+	if type(itemLinkOrID) == "string" then
+		-- Sometimes callers pass an itemID as a string.
+		local asNumber = tonumber(itemLinkOrID)
+		if asNumber and not itemLinkOrID:find(":") then
+			itemLinkOrID = asNumber
+		else
+			return itemLinkOrID
+		end
+	end
+
+	if type(itemLinkOrID) == "number" then
+		return itemLinkOrID
+	end
+
+	return nil
 end
 
 local qualityFunc = function(slot, ...)
@@ -43,10 +199,18 @@ local qualityFunc = function(slot, ...)
     end
 
     for i = 1, select('#', ...) do
-        local itemLink = select(i, ...)
-        if itemLink then
-            local item = Item:CreateFromItemLink(itemLink)
-            if not item:IsItemEmpty() then
+        local itemRef = normalizeItemLink(select(i, ...))
+        if itemRef then
+            local item
+            if type(itemRef) == "number" and Item and Item.CreateFromItemID then
+                item = Item:CreateFromItemID(itemRef)
+            elseif type(itemRef) == "number" and Item and Item.CreateFromItemLink then
+                item = Item:CreateFromItemLink("item:" .. itemRef)
+            elseif type(itemRef) == "string" then
+                item = Item:CreateFromItemLink(itemRef)
+            end
+
+            if item and not item:IsItemEmpty() then
                 pending = pending + 1
 
                 item:ContinueOnItemLoad(function()
@@ -56,8 +220,8 @@ local qualityFunc = function(slot, ...)
                     end
 
                     if not hasQuestItem then
-                        local link = item:GetItemLink() or itemLink
-                        if isQuestItemLink(link) then
+                        local linkOrID = item:GetItemLink() or itemRef
+                        if isQuestItem(linkOrID) then
                             hasQuestItem = true
                         end
                     end
@@ -99,6 +263,7 @@ function oGlowClassic:ApplyBorder(slot, quality)
     if not slot or not slot.CreateTexture then
         return
     end
+
     if not slot.oGlowBorder then
         local owner = slot
         if slot.GetClipsChildren and slot:GetClipsChildren() then
@@ -114,14 +279,16 @@ function oGlowClassic:ApplyBorder(slot, quality)
             end
         end
 
-        local border = owner:CreateTexture(nil, "OVERLAY")
+        local border = owner:CreateTexture(nil, "OVERLAY", nil, 7)
         border:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
         border:SetBlendMode("ADD")
         border:SetAlpha(0.8)
-        border:SetSize(70, 70)
+        updateBorderSize(border, owner)
         border:SetPoint("CENTER", slot, "CENTER", 0, 0)
         slot.oGlowBorder = border
     end
+
+    updateBorderSize(slot.oGlowBorder, slot.oGlowBorder:GetParent() or slot)
 
     local rgb
     if type(quality) == 'number' then
@@ -139,6 +306,21 @@ function oGlowClassic:ApplyBorder(slot, quality)
         return
     end
     slot.oGlowBorder:Show()
+
+    local filters = oGlowClassicDB and oGlowClassicDB.FilterSettings
+    local overrideBorder = not (filters and filters.baganatorOverride == false)
+    if overrideBorder and slot.oGlowClassicIsBaganator and slot.IconBorder then
+        if slot.oGlowClassicIconBorderAlpha == nil then
+            slot.oGlowClassicIconBorderAlpha = slot.IconBorder:GetAlpha()
+        end
+        slot.IconBorder:SetAlpha(0)
+    elseif slot.oGlowClassicIconBorderAlpha ~= nil and slot.IconBorder then
+        slot.IconBorder:SetAlpha(slot.oGlowClassicIconBorderAlpha)
+        slot.oGlowClassicIconBorderAlpha = nil
+    end
+
+    scheduleDelayedBorderSizeRefresh(slot)
+    scheduleDelayedBaganatorIconBorderOverride(slot)
 end
 
 function oGlowClassic:ClearBorder(slot)
@@ -146,4 +328,11 @@ function oGlowClassic:ClearBorder(slot)
     if slot.oGlowBorder then
         slot.oGlowBorder:Hide()
     end
+
+    if slot.oGlowClassicIconBorderAlpha ~= nil and slot.IconBorder then
+        slot.IconBorder:SetAlpha(slot.oGlowClassicIconBorderAlpha)
+        slot.oGlowClassicIconBorderAlpha = nil
+    end
+
+    slot.oGlowClassicPendingIconBorderFix = nil
 end

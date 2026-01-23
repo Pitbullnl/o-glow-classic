@@ -29,6 +29,14 @@ function frame:CreateOptions()
 	questCheckbox:SetPoint('TOPLEFT', thesDDown, 'BOTTOMLEFT', 16, -8)
 	questCheckbox.Text:SetText('Quest item override')
 
+	local baganatorCheckbox = CreateFrame('CheckButton', nil, self, 'InterfaceOptionsCheckButtonTemplate')
+	baganatorCheckbox:SetPoint('TOPLEFT', questCheckbox, 'BOTTOMLEFT', 0, -4)
+	baganatorCheckbox.Text:SetText('Use oGlowClassic borders in Baganator')
+
+	local baganatorDebugCheckbox = CreateFrame('CheckButton', nil, self, 'InterfaceOptionsCheckButtonTemplate')
+	baganatorDebugCheckbox:SetPoint('TOPLEFT', baganatorCheckbox, 'BOTTOMLEFT', 0, -4)
+	baganatorDebugCheckbox.Text:SetText('Debug Baganator integration')
+
 	do
 		local updateAllActivePipes = function()
 			for pipe, active, name, desc in oGlowClassic.IteratePipes() do
@@ -69,6 +77,18 @@ function frame:CreateOptions()
 			questCheckbox:SetChecked(enabled)
 		end
 
+		local UpdateBaganatorCheckbox = function()
+			local filters = oGlowClassicDB.FilterSettings
+			local enabled = not (filters and filters.baganatorOverride == false)
+			baganatorCheckbox:SetChecked(enabled)
+		end
+
+		local UpdateBaganatorDebugCheckbox = function()
+			local filters = oGlowClassicDB.FilterSettings
+			local enabled = filters and filters.baganatorDebug == true
+			baganatorDebugCheckbox:SetChecked(enabled)
+		end
+
 		local Quest_OnClick = function(self)
 			if not oGlowClassicDB.FilterSettings then
 				oGlowClassicDB.FilterSettings = {}
@@ -76,6 +96,29 @@ function frame:CreateOptions()
 
 			oGlowClassicDB.FilterSettings.questItems = self:GetChecked() and true or false
 			oGlowClassic:CallOptionCallbacks()
+			updateAllActivePipes()
+		end
+
+		local Baganator_OnClick = function(self)
+			if not oGlowClassicDB.FilterSettings then
+				oGlowClassicDB.FilterSettings = {}
+			end
+
+			oGlowClassicDB.FilterSettings.baganatorOverride = self:GetChecked() and true or false
+			updateAllActivePipes()
+		end
+
+		local BaganatorDebug_OnClick = function(self)
+			if not oGlowClassicDB.FilterSettings then
+				oGlowClassicDB.FilterSettings = {}
+			end
+
+			oGlowClassicDB.FilterSettings.baganatorDebug = self:GetChecked() and true or false
+			if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+				DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99oGlowClassic:|r(Baganator) debug " .. (oGlowClassicDB.FilterSettings.baganatorDebug and "enabled" or "disabled"))
+			else
+				print("|cff33ff99oGlowClassic:|r(Baganator) debug " .. (oGlowClassicDB.FilterSettings.baganatorDebug and "enabled" or "disabled"))
+			end
 			updateAllActivePipes()
 		end
 
@@ -102,10 +145,26 @@ function frame:CreateOptions()
 		end)
 		questCheckbox:SetScript('OnLeave', DropDown_OnLeave)
 
+		baganatorCheckbox:SetScript('OnClick', Baganator_OnClick)
+		baganatorCheckbox:SetScript('OnEnter', function(self)
+			GameTooltip:SetOwner(self, 'ANCHOR_TOPLEFT')
+			GameTooltip:SetText("If enabled, oGlowClassic will display its borders on Baganator item buttons (and hide Baganator's own thin border). If disabled, Baganator's borders are used.", nil, nil, nil, nil, 1)
+		end)
+		baganatorCheckbox:SetScript('OnLeave', DropDown_OnLeave)
+
+		baganatorDebugCheckbox:SetScript('OnClick', BaganatorDebug_OnClick)
+		baganatorDebugCheckbox:SetScript('OnEnter', function(self)
+			GameTooltip:SetOwner(self, 'ANCHOR_TOPLEFT')
+			GameTooltip:SetText('If enabled, prints debug messages for the oGlowClassic Baganator integration (useful for troubleshooting first-open behavior).', nil, nil, nil, nil, 1)
+		end)
+		baganatorDebugCheckbox:SetScript('OnLeave', DropDown_OnLeave)
+
 		function frame:refresh()
 			UIDropDownMenu_Initialize(thesDDown, DropDown_init)
 			UpdateSelected()
 			UpdateQuestCheckbox()
+			UpdateBaganatorCheckbox()
+			UpdateBaganatorDebugCheckbox()
 		end
 		self:refresh()
 	end

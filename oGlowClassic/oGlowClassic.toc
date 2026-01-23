@@ -6,7 +6,7 @@
 ## X-Min-Interface-Mop: 50503
 ## Title: oGlowClassic
 ## Author: Haste, sbd74, pitbullnl91 (updated for WotLK/cata/MoP Classic)
-## Version: 0.3.10
+## Version: 0.3.11
 ## SavedVariables: oGlowClassicDB
 ## Notes: Make your shiny items... glow in the dark!
 ## X-Website: https://www.curseforge.com/wow/addons/oglowclassic
@@ -26,6 +26,7 @@ ui\quality.lua
 ui\colors.lua
 
 pipes\bags.lua
+pipes\baganator.lua
 pipes\char.lua
 pipes\inspect.lua
 pipes\bank.lua

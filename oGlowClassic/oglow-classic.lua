@@ -22,6 +22,19 @@ local upgradePath = {
 		db.FilterSettings = {}
 		db.Colors = {}
 		db.version = 1
+	end,
+	[1] = function(db)
+		db.EnabledPipes = db.EnabledPipes or {}
+		db.EnabledPipes.baganator = true
+
+		db.EnabledFilters = db.EnabledFilters or {}
+		for _, enabledPipes in next, db.EnabledFilters do
+			if type(enabledPipes) == "table" then
+				enabledPipes.baganator = true
+			end
+		end
+
+		db.version = 2
 	end
 }
 
@@ -39,7 +52,7 @@ local ADDON_LOADED = function(self, event, addon)
 	if(addon == 'oGlowClassic') then
 		if(not oGlowClassicDB) then
 			oGlowClassicDB = {
-				version = 1,
+				version = 2,
 				EnabledPipes = {},
 				EnabledFilters = {},
 
