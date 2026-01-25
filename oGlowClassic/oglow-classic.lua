@@ -25,14 +25,7 @@ local upgradePath = {
 	end,
 	[1] = function(db)
 		db.EnabledPipes = db.EnabledPipes or {}
-		db.EnabledPipes.baganator = true
-
 		db.EnabledFilters = db.EnabledFilters or {}
-		for _, enabledPipes in next, db.EnabledFilters do
-			if type(enabledPipes) == "table" then
-				enabledPipes.baganator = true
-			end
-		end
 
 		db.version = 2
 	end
@@ -100,23 +93,54 @@ end
 
 function oGlowClassic:CallFilters(pipe, frame, ...)
 	argcheck(pipe, 2, 'string')
+	argcheck(frame, 3, 'string')
 
 	if(not pipesTable[pipe]) then return nil, 'Pipe does not exist.' end
 
-	local ref = activeFilters[pipe]
-	if(ref) then
-		for display, filters in next, ref do
-			-- TODO: Move this check out of the loop.
-			if(not displaysTable[display]) then return nil, 'Display does not exist.' end
+	local display = frame
+	local targetFrame = select(1, ...)
+	if not targetFrame then
+		return nil, 'Frame is required.'
+	end
 
-			for i=1,#filters do
-				local func = filters[i][2]
+	-- Store last call for async filters to re-run later.
+	do
+		targetFrame.oGlowClassicLastCall = {
+			pipe = pipe,
+			display = display,
+			args = { select(2, ...) },
+		}
+	end
 
-				-- drop out of the loop if we actually do something nifty on a frame.
-				if(displaysTable[display](frame, func(...))) then break end
-			end
+	local ref = activeFilters[pipe] and activeFilters[pipe][display]
+	if ref then
+		if(not displaysTable[display]) then return nil, 'Display does not exist.' end
+
+		for i=1,#ref do
+			local func = ref[i][2]
+
+			-- drop out of the loop if we actually do something nifty on a frame.
+			if(displaysTable[display](targetFrame, func(targetFrame, select(2, ...)))) then break end
 		end
 	end
+end
+
+function oGlowClassic:RefreshFrame(frame)
+	if not frame then
+		return nil, "Frame is required."
+	end
+
+	local last = frame.oGlowClassicLastCall
+	if not last or not last.pipe or not last.display then
+		return nil, "No stored call."
+	end
+
+	if last.args and type(last.args) == "table" then
+		local _unpack = unpack or table.unpack
+		return self:CallFilters(last.pipe, last.display, frame, _unpack(last.args))
+	end
+
+	return self:CallFilters(last.pipe, last.display, frame)
 end
 
 function oGlowClassic:RegisterOptionCallback(func)

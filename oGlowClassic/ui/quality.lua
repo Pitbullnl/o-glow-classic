@@ -29,13 +29,27 @@ function frame:CreateOptions()
 	questCheckbox:SetPoint('TOPLEFT', thesDDown, 'BOTTOMLEFT', 16, -8)
 	questCheckbox.Text:SetText('Quest item override')
 
-	local baganatorCheckbox = CreateFrame('CheckButton', nil, self, 'InterfaceOptionsCheckButtonTemplate')
-	baganatorCheckbox:SetPoint('TOPLEFT', questCheckbox, 'BOTTOMLEFT', 0, -4)
-	baganatorCheckbox.Text:SetText('Use oGlowClassic borders in Baganator')
-
-	local baganatorDebugCheckbox = CreateFrame('CheckButton', nil, self, 'InterfaceOptionsCheckButtonTemplate')
-	baganatorDebugCheckbox:SetPoint('TOPLEFT', baganatorCheckbox, 'BOTTOMLEFT', 0, -4)
-	baganatorDebugCheckbox.Text:SetText('Debug Baganator integration')
+	local questBorderScaleSlider = CreateFrame('Slider', 'oGlowClassicOptFQualityQuestBorderScale', self, 'OptionsSliderTemplate')
+	questBorderScaleSlider:SetPoint('TOPLEFT', questCheckbox, 'BOTTOMLEFT', 0, -20)
+	questBorderScaleSlider:SetWidth(240)
+	questBorderScaleSlider:SetMinMaxValues(0.2, 1.0)
+	questBorderScaleSlider:SetValueStep(0.05)
+	questBorderScaleSlider:SetValue(1)
+	if questBorderScaleSlider.ObeyStepOnDrag then
+		questBorderScaleSlider:ObeyStepOnDrag(true)
+	end
+	if questBorderScaleSlider.Text and questBorderScaleSlider.Text.SetText then
+		questBorderScaleSlider.Text:SetText('Quest border intensity')
+	end
+	if questBorderScaleSlider.Low and questBorderScaleSlider.Low.SetText then
+		questBorderScaleSlider.Low:SetText('0.2x')
+	end
+	if questBorderScaleSlider.High and questBorderScaleSlider.High.SetText then
+		questBorderScaleSlider.High:SetText('1.0x')
+	end
+	if questBorderScaleSlider.Text and questBorderScaleSlider.Text.SetText then
+		questBorderScaleSlider.Text:SetText(('Quest border intensity: %.2fx'):format(questBorderScaleSlider:GetValue()))
+	end
 
 	do
 		local updateAllActivePipes = function()
@@ -77,16 +91,18 @@ function frame:CreateOptions()
 			questCheckbox:SetChecked(enabled)
 		end
 
-		local UpdateBaganatorCheckbox = function()
+		local UpdateQuestBorderScaleSlider = function()
 			local filters = oGlowClassicDB.FilterSettings
-			local enabled = not (filters and filters.baganatorOverride == false)
-			baganatorCheckbox:SetChecked(enabled)
-		end
-
-		local UpdateBaganatorDebugCheckbox = function()
-			local filters = oGlowClassicDB.FilterSettings
-			local enabled = filters and filters.baganatorDebug == true
-			baganatorDebugCheckbox:SetChecked(enabled)
+			local v = 1
+			if filters and type(filters.questBorderIntensity) == "number" then
+				v = filters.questBorderIntensity
+			elseif filters and type(filters.questBorderScale) == "number" then
+				v = filters.questBorderScale
+			end
+			questBorderScaleSlider:SetValue(v)
+			if questBorderScaleSlider.Text and questBorderScaleSlider.Text.SetText then
+				questBorderScaleSlider.Text:SetText(('Quest border intensity: %.2fx'):format(v))
+			end
 		end
 
 		local Quest_OnClick = function(self)
@@ -99,26 +115,23 @@ function frame:CreateOptions()
 			updateAllActivePipes()
 		end
 
-		local Baganator_OnClick = function(self)
+		local QuestBorderScale_OnValueChanged = function(self, value)
 			if not oGlowClassicDB.FilterSettings then
 				oGlowClassicDB.FilterSettings = {}
 			end
 
-			oGlowClassicDB.FilterSettings.baganatorOverride = self:GetChecked() and true or false
-			updateAllActivePipes()
-		end
+			local stepped = math.floor((value / 0.05) + 0.5) * 0.05
+			-- clamp for intensity (0.2 - 1.0)
+			stepped = math.max(0.2, math.min(1.0, stepped))
 
-		local BaganatorDebug_OnClick = function(self)
-			if not oGlowClassicDB.FilterSettings then
-				oGlowClassicDB.FilterSettings = {}
+			if self.Text and self.Text.SetText then
+				self.Text:SetText(('Quest border intensity: %.2fx'):format(stepped))
 			end
 
-			oGlowClassicDB.FilterSettings.baganatorDebug = self:GetChecked() and true or false
-			if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
-				DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99oGlowClassic:|r(Baganator) debug " .. (oGlowClassicDB.FilterSettings.baganatorDebug and "enabled" or "disabled"))
-			else
-				print("|cff33ff99oGlowClassic:|r(Baganator) debug " .. (oGlowClassicDB.FilterSettings.baganatorDebug and "enabled" or "disabled"))
-			end
+			oGlowClassicDB.FilterSettings.questBorderIntensity = stepped
+			-- Back-compat for older versions that read questBorderScale.
+			oGlowClassicDB.FilterSettings.questBorderScale = stepped
+			oGlowClassic:CallOptionCallbacks()
 			updateAllActivePipes()
 		end
 
@@ -145,26 +158,18 @@ function frame:CreateOptions()
 		end)
 		questCheckbox:SetScript('OnLeave', DropDown_OnLeave)
 
-		baganatorCheckbox:SetScript('OnClick', Baganator_OnClick)
-		baganatorCheckbox:SetScript('OnEnter', function(self)
+		questBorderScaleSlider:SetScript('OnEnter', function(self)
 			GameTooltip:SetOwner(self, 'ANCHOR_TOPLEFT')
-			GameTooltip:SetText("If enabled, oGlowClassic will display its borders on Baganator item buttons (and hide Baganator's own thin border). If disabled, Baganator's borders are used.", nil, nil, nil, nil, 1)
+			GameTooltip:SetText('Adjusts the intensity of the quest-item border only (lower = less thick/glowy look).', nil, nil, nil, nil, 1)
 		end)
-		baganatorCheckbox:SetScript('OnLeave', DropDown_OnLeave)
-
-		baganatorDebugCheckbox:SetScript('OnClick', BaganatorDebug_OnClick)
-		baganatorDebugCheckbox:SetScript('OnEnter', function(self)
-			GameTooltip:SetOwner(self, 'ANCHOR_TOPLEFT')
-			GameTooltip:SetText('If enabled, prints debug messages for the oGlowClassic Baganator integration (useful for troubleshooting first-open behavior).', nil, nil, nil, nil, 1)
-		end)
-		baganatorDebugCheckbox:SetScript('OnLeave', DropDown_OnLeave)
-
+		questBorderScaleSlider:SetScript('OnLeave', DropDown_OnLeave)
+		questBorderScaleSlider:SetScript('OnValueChanged', QuestBorderScale_OnValueChanged)
+	
 		function frame:refresh()
 			UIDropDownMenu_Initialize(thesDDown, DropDown_init)
 			UpdateSelected()
 			UpdateQuestCheckbox()
-			UpdateBaganatorCheckbox()
-			UpdateBaganatorDebugCheckbox()
+			UpdateQuestBorderScaleSlider()
 		end
 		self:refresh()
 	end
