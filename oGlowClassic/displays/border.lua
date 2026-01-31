@@ -3,7 +3,7 @@ local oGlowClassic = ns.oGlowClassic
 
 local argcheck = oGlowClassic.argcheck
 local colorTable = ns.colorTable
-local questBorderIntensity = 1
+local questBorderIntensity = 0.35
 
 local updateBorderSize = function(border, owner, frame, color)
 	if not (border and owner and UIParent and UIParent.GetEffectiveScale and owner.GetEffectiveScale) then
@@ -35,6 +35,21 @@ local createBorder = function(self, point)
 	local bc = self.oGlowClassicBorder
 	if(not bc) then
 		local owner = self
+
+		-- Some pipes pass textures instead of frames (e.g. TradeSkill reagent icons).
+		-- Textures can't create other textures, so create the border on the nearest parent frame.
+		if not (owner and owner.CreateTexture) then
+			local parent = owner and owner.GetParent and owner:GetParent() or nil
+			while parent and not parent.CreateTexture do
+				parent = parent.GetParent and parent:GetParent() or nil
+			end
+			if parent and parent.CreateTexture then
+				owner = parent
+			else
+				return nil
+			end
+		end
+
 		if self.GetClipsChildren and self:GetClipsChildren() then
 			local parent = self.GetParent and self:GetParent()
 			if parent and parent.CreateTexture then
@@ -110,17 +125,26 @@ end
 local borderDisplay = function(frame, color)
 	if(color) then
 		local bc = createBorder(frame)
+		if not bc then
+			return nil
+		end
 		updateBorderSize(bc, bc:GetParent() or frame, frame, color)
 		local rgb = colorTable[color]
 
 		if(rgb) then
 			bc:SetVertexColor(rgb[1], rgb[2], rgb[3])
 			if color == "quest" and type(questBorderIntensity) == "number" then
-				local intensity = math.max(0.05, math.min(1, questBorderIntensity))
-				-- Quest borders tend to look "thicker/glowier" with ADD blend mode.
-				-- Use BLEND for quests so intensity mainly controls visibility.
-				bc:SetBlendMode("ADD")
-				bc:SetAlpha(.8 * intensity)
+				-- Only apply intensity scaling for Baganator buttons (where quest borders can look extra strong).
+				-- For default Blizzard buttons, keep the same alpha as other borders.
+				if frame and frame.oGlowClassicIsBaganator then
+					local intensity = math.max(0.05, math.min(1, questBorderIntensity))
+					-- Keep ADD, but remap intensity so lower values stay visible.
+					bc:SetBlendMode("ADD")
+					bc:SetAlpha(.8 * math.sqrt(intensity))
+				else
+					bc:SetBlendMode("ADD")
+					bc:SetAlpha(.8)
+				end
 			else
 				bc:SetBlendMode("ADD")
 				bc:SetAlpha(.8)
@@ -144,7 +168,7 @@ oGlowClassic:RegisterOptionCallback(function(db)
 		-- Back-compat: previously this value was stored as "scale".
 		questBorderIntensity = filters.questBorderScale
 	else
-		questBorderIntensity = 1
+		questBorderIntensity = 0.35
 	end
 end)
 

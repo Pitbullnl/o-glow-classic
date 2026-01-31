@@ -34,7 +34,7 @@ function frame:CreateOptions()
 	questBorderScaleSlider:SetWidth(240)
 	questBorderScaleSlider:SetMinMaxValues(0.2, 1.0)
 	questBorderScaleSlider:SetValueStep(0.05)
-	questBorderScaleSlider:SetValue(1)
+	questBorderScaleSlider:SetValue(0.35)
 	if questBorderScaleSlider.ObeyStepOnDrag then
 		questBorderScaleSlider:ObeyStepOnDrag(true)
 	end
@@ -93,7 +93,7 @@ function frame:CreateOptions()
 
 		local UpdateQuestBorderScaleSlider = function()
 			local filters = oGlowClassicDB.FilterSettings
-			local v = 1
+			local v = 0.35
 			if filters and type(filters.questBorderIntensity) == "number" then
 				v = filters.questBorderIntensity
 			elseif filters and type(filters.questBorderScale) == "number" then

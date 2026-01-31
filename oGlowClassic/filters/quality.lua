@@ -6,40 +6,107 @@ local questEnabled = true
 
 local questCacheByItemID = {}
 
+local function matchesQuestTooltipText(text, questItemText, startsQuestText)
+	if not text then
+		return false
+	end
+
+	if questItemText and text:find(questItemText, 1, true) then
+		return true
+	end
+	if startsQuestText and text:find(startsQuestText, 1, true) then
+		return true
+	end
+
+	-- Fallback for cases where globals aren't present/complete.
+	if text == "Quest Item" or text == "Starts a Quest" or text == "This Item Begins a Quest" then
+		return true
+	end
+
+	return false
+end
+
+local scanTooltip
+local function getScanTooltip()
+	if scanTooltip then
+		return scanTooltip
+	end
+
+	if not (CreateFrame and UIParent) then
+		return nil
+	end
+
+	scanTooltip = CreateFrame("GameTooltip", "oGlowClassicQuestScanTooltip", UIParent, "GameTooltipTemplate")
+	scanTooltip:SetOwner(UIParent, "ANCHOR_NONE")
+	return scanTooltip
+end
+
 local function isQuestItemByTooltip(itemLink, itemID)
-	if not (C_TooltipInfo and (C_TooltipInfo.GetHyperlink or C_TooltipInfo.GetItemByID)) then
-		return false
-	end
-
-	local tooltipInfo
-	if itemLink and C_TooltipInfo.GetHyperlink then
-		tooltipInfo = C_TooltipInfo.GetHyperlink(itemLink)
-	elseif itemID and C_TooltipInfo.GetItemByID then
-		tooltipInfo = C_TooltipInfo.GetItemByID(itemID)
-	end
-
-	if not (tooltipInfo and tooltipInfo.lines) then
-		return false
-	end
-
 	local questItemText = _G.ITEM_BIND_QUEST
 	local startsQuestText = _G.ITEM_STARTS_QUEST
-	for _, line in ipairs(tooltipInfo.lines) do
-		local leftText = line and line.leftText
-		if leftText then
-			if questItemText and leftText:find(questItemText, 1, true) then
-				return true
+
+	-- Modern clients: Tooltip info API.
+	if C_TooltipInfo and (C_TooltipInfo.GetHyperlink or C_TooltipInfo.GetItemByID) then
+		local tooltipInfo
+		if itemLink and C_TooltipInfo.GetHyperlink then
+			tooltipInfo = C_TooltipInfo.GetHyperlink(itemLink)
+		elseif itemID and C_TooltipInfo.GetItemByID then
+			tooltipInfo = C_TooltipInfo.GetItemByID(itemID)
+		end
+
+		if tooltipInfo and tooltipInfo.lines then
+			local retrievingText = _G.RETRIEVING_ITEM_INFO
+			for _, line in ipairs(tooltipInfo.lines) do
+				local leftText = line and line.leftText
+				local rightText = line and line.rightText
+				if retrievingText and (leftText == retrievingText or rightText == retrievingText) then
+					return nil
+				end
+				if matchesQuestTooltipText(leftText, questItemText, startsQuestText) or matchesQuestTooltipText(rightText, questItemText, startsQuestText) then
+					return true
+				end
 			end
-			if startsQuestText and leftText:find(startsQuestText, 1, true) then
-				return true
-			end
-			-- Fallback for cases where globals aren't present/complete.
-			if leftText == "Quest Item" or leftText == "Starts a Quest" then
-				return true
-			end
+
+			return false
 		end
 	end
 
+	-- Classic/older clients: scan via a hidden GameTooltip.
+	local tt = getScanTooltip()
+	if not (tt and tt.ClearLines and tt.SetOwner and tt.SetHyperlink and tt.NumLines) then
+		return nil
+	end
+
+	tt:ClearLines()
+	tt:SetOwner(UIParent, "ANCHOR_NONE")
+	if itemLink then
+		tt:SetHyperlink(itemLink)
+	elseif itemID then
+		tt:SetHyperlink("item:" .. itemID)
+	else
+		return nil
+	end
+
+	local retrievingText = _G.RETRIEVING_ITEM_INFO
+	local ttName = tt:GetName()
+	for i = 1, tt:NumLines() do
+		local leftRegion = ttName and _G[ttName .. "TextLeft" .. i]
+		local rightRegion = ttName and _G[ttName .. "TextRight" .. i]
+		local leftText = leftRegion and leftRegion.GetText and leftRegion:GetText()
+		local rightText = rightRegion and rightRegion.GetText and rightRegion:GetText()
+
+		if retrievingText and (leftText == retrievingText or rightText == retrievingText) then
+			tt:Hide()
+			return nil
+		end
+
+		if matchesQuestTooltipText(leftText, questItemText, startsQuestText) or matchesQuestTooltipText(rightText, questItemText, startsQuestText) then
+			tt:Hide()
+			return true
+		end
+	end
+
+	tt:Hide()
 	return false
 end
 
@@ -72,7 +139,7 @@ local function isQuestItem(itemLinkOrID)
 	end
 
 	local isQuest = isQuestItemByTooltip(itemLink, itemID)
-	if itemID then
+	if itemID and isQuest ~= nil then
 		questCacheByItemID[itemID] = isQuest
 	end
 	return isQuest
@@ -148,7 +215,19 @@ local function scheduleRefreshAfterLoad(slot, itemRef)
 
 	item:ContinueOnItemLoad(function()
 		slot.oGlowClassicQualityLoadPending = nil
-		if oGlowClassic and oGlowClassic.RefreshFrame then
+		if not (oGlowClassic and oGlowClassic.RefreshFrame) then
+			return
+		end
+
+		-- Defer refresh to avoid re-entrancy into Blizzard's Item callback dispatch
+		-- (can cause a C stack overflow on Classic clients).
+		if C_Timer and C_Timer.After then
+			C_Timer.After(0, function()
+				if oGlowClassic and oGlowClassic.RefreshFrame then
+					oGlowClassic:RefreshFrame(slot)
+				end
+			end)
+		else
 			oGlowClassic:RefreshFrame(slot)
 		end
 	end)
@@ -163,8 +242,12 @@ local qualityFunc = function(slot, ...)
 		local itemRef = normalizeItemLink(select(i, ...))
 		if itemRef then
 			if questEnabled and not hasQuestItem and rawget(colorTable, 'quest') then
-				if isQuestItem(itemRef) then
+				local isQuest = isQuestItem(itemRef)
+				if isQuest == true then
 					hasQuestItem = true
+				elseif isQuest == nil then
+					missingInfo = true
+					scheduleRefreshAfterLoad(slot, itemRef)
 				end
 			end
 
