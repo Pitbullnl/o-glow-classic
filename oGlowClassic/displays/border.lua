@@ -3,7 +3,66 @@ local oGlowClassic = ns.oGlowClassic
 
 local argcheck = oGlowClassic.argcheck
 local colorTable = ns.colorTable
-local questBorderIntensity = 0.35
+local questBorderIntensity = 1
+local borderIntensityOverrideAll = false
+local borderIntensityAll = 1
+local borderIntensityByColor = {}
+local borderThickness = 1
+
+local BORDER_INTENSITY_MIN = 0.2
+local BORDER_INTENSITY_MAX = 1.0
+local BORDER_THICKNESS_MIN = 0.6
+local BORDER_THICKNESS_MAX = 1.4
+
+local function clampBorderIntensity(value, fallback)
+	if type(value) ~= "number" then
+		return fallback or 1
+	end
+
+	if value < BORDER_INTENSITY_MIN then
+		return BORDER_INTENSITY_MIN
+	elseif value > BORDER_INTENSITY_MAX then
+		return BORDER_INTENSITY_MAX
+	end
+
+	return value
+end
+
+local function getBorderIntensity(color)
+	if borderIntensityOverrideAll then
+		return clampBorderIntensity(borderIntensityAll, 1)
+	end
+
+	-- Keep quest behavior backward-compatible with existing slider/storage.
+	if color == "quest" then
+		return clampBorderIntensity(questBorderIntensity, 1)
+	end
+
+	if type(borderIntensityByColor) ~= "table" then
+		return 1
+	end
+
+	local value = borderIntensityByColor[color]
+	if value == nil and type(color) == "number" then
+		value = borderIntensityByColor[tostring(color)]
+	end
+
+	return clampBorderIntensity(value, 1)
+end
+
+local function clampBorderThickness(value, fallback)
+	if type(value) ~= "number" then
+		return fallback or 1
+	end
+
+	if value < BORDER_THICKNESS_MIN then
+		return BORDER_THICKNESS_MIN
+	elseif value > BORDER_THICKNESS_MAX then
+		return BORDER_THICKNESS_MAX
+	end
+
+	return value
+end
 
 local updateBorderSize = function(border, owner, frame, color)
 	if not (border and owner and UIParent and UIParent.GetEffectiveScale and owner.GetEffectiveScale) then
@@ -28,7 +87,8 @@ local updateBorderSize = function(border, owner, frame, color)
 		end
 	end
 
-	border:SetSize(baseSize * scaleFix, baseSize * scaleFix)
+	local thickness = clampBorderThickness(borderThickness, 1)
+	border:SetSize(baseSize * scaleFix * thickness, baseSize * scaleFix * thickness)
 end
 
 local createBorder = function(self, point)
@@ -133,22 +193,10 @@ local borderDisplay = function(frame, color)
 
 		if(rgb) then
 			bc:SetVertexColor(rgb[1], rgb[2], rgb[3])
-			if color == "quest" and type(questBorderIntensity) == "number" then
-				-- Only apply intensity scaling for Baganator buttons (where quest borders can look extra strong).
-				-- For default Blizzard buttons, keep the same alpha as other borders.
-				if frame and frame.oGlowClassicIsBaganator then
-					local intensity = math.max(0.05, math.min(1, questBorderIntensity))
-					-- Keep ADD, but remap intensity so lower values stay visible.
-					bc:SetBlendMode("ADD")
-					bc:SetAlpha(.8 * math.sqrt(intensity))
-				else
-					bc:SetBlendMode("ADD")
-					bc:SetAlpha(.8)
-				end
-			else
-				bc:SetBlendMode("ADD")
-				bc:SetAlpha(.8)
-			end
+			local intensity = getBorderIntensity(color)
+			-- Keep ADD, but remap intensity so lower values stay visible.
+			bc:SetBlendMode("ADD")
+			bc:SetAlpha(.8 * math.sqrt(intensity))
 			bc:Show()
 			applyBaganatorIconBorderOverride(frame, true)
 		end
@@ -168,7 +216,40 @@ oGlowClassic:RegisterOptionCallback(function(db)
 		-- Back-compat: previously this value was stored as "scale".
 		questBorderIntensity = filters.questBorderScale
 	else
-		questBorderIntensity = 0.35
+		questBorderIntensity = 1
+	end
+
+	if filters and type(filters.borderIntensityOverrideAll) == "boolean" then
+		borderIntensityOverrideAll = filters.borderIntensityOverrideAll
+	elseif filters and type(filters.borderScaleOverrideAll) == "boolean" then
+		-- Back-compat with previous "scale" key naming.
+		borderIntensityOverrideAll = filters.borderScaleOverrideAll
+	else
+		borderIntensityOverrideAll = false
+	end
+
+	if filters and type(filters.borderIntensityAll) == "number" then
+		borderIntensityAll = clampBorderIntensity(filters.borderIntensityAll, 1)
+	elseif filters and type(filters.borderScaleAll) == "number" then
+		-- Back-compat with previous "scale" key naming.
+		borderIntensityAll = clampBorderIntensity(filters.borderScaleAll, 1)
+	else
+		borderIntensityAll = 1
+	end
+
+	if filters and type(filters.borderIntensityByColor) == "table" then
+		borderIntensityByColor = filters.borderIntensityByColor
+	elseif filters and type(filters.borderScaleByColor) == "table" then
+		-- Back-compat with previous "scale" key naming.
+		borderIntensityByColor = filters.borderScaleByColor
+	else
+		borderIntensityByColor = {}
+	end
+
+	if filters and type(filters.borderThickness) == "number" then
+		borderThickness = clampBorderThickness(filters.borderThickness, 1)
+	else
+		borderThickness = 1
 	end
 end)
 

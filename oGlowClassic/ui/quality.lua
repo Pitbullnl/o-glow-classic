@@ -29,27 +29,10 @@ function frame:CreateOptions()
 	questCheckbox:SetPoint('TOPLEFT', thesDDown, 'BOTTOMLEFT', 16, -8)
 	questCheckbox.Text:SetText('Quest item override')
 
-	local questBorderScaleSlider = CreateFrame('Slider', 'oGlowClassicOptFQualityQuestBorderScale', self, 'OptionsSliderTemplate')
-	questBorderScaleSlider:SetPoint('TOPLEFT', questCheckbox, 'BOTTOMLEFT', 0, -20)
-	questBorderScaleSlider:SetWidth(240)
-	questBorderScaleSlider:SetMinMaxValues(0.2, 1.0)
-	questBorderScaleSlider:SetValueStep(0.05)
-	questBorderScaleSlider:SetValue(0.35)
-	if questBorderScaleSlider.ObeyStepOnDrag then
-		questBorderScaleSlider:ObeyStepOnDrag(true)
-	end
-	if questBorderScaleSlider.Text and questBorderScaleSlider.Text.SetText then
-		questBorderScaleSlider.Text:SetText('Quest border intensity')
-	end
-	if questBorderScaleSlider.Low and questBorderScaleSlider.Low.SetText then
-		questBorderScaleSlider.Low:SetText('0.2x')
-	end
-	if questBorderScaleSlider.High and questBorderScaleSlider.High.SetText then
-		questBorderScaleSlider.High:SetText('1.0x')
-	end
-	if questBorderScaleSlider.Text and questBorderScaleSlider.Text.SetText then
-		questBorderScaleSlider.Text:SetText(('Quest border intensity: %.2fx'):format(questBorderScaleSlider:GetValue()))
-	end
+	local bordersNote = ns.createFontString(self, 'GameFontNormalSmall')
+	bordersNote:SetPoint('TOPLEFT', questCheckbox, 'BOTTOMLEFT', 0, -8)
+	bordersNote:SetPoint('RIGHT', self, -24, 0)
+	bordersNote:SetText('Border intensity is now configured in the Borders category.')
 
 	do
 		local updateAllActivePipes = function()
@@ -91,46 +74,12 @@ function frame:CreateOptions()
 			questCheckbox:SetChecked(enabled)
 		end
 
-		local UpdateQuestBorderScaleSlider = function()
-			local filters = oGlowClassicDB.FilterSettings
-			local v = 0.35
-			if filters and type(filters.questBorderIntensity) == "number" then
-				v = filters.questBorderIntensity
-			elseif filters and type(filters.questBorderScale) == "number" then
-				v = filters.questBorderScale
-			end
-			questBorderScaleSlider:SetValue(v)
-			if questBorderScaleSlider.Text and questBorderScaleSlider.Text.SetText then
-				questBorderScaleSlider.Text:SetText(('Quest border intensity: %.2fx'):format(v))
-			end
-		end
-
 		local Quest_OnClick = function(self)
 			if not oGlowClassicDB.FilterSettings then
 				oGlowClassicDB.FilterSettings = {}
 			end
 
 			oGlowClassicDB.FilterSettings.questItems = self:GetChecked() and true or false
-			oGlowClassic:CallOptionCallbacks()
-			updateAllActivePipes()
-		end
-
-		local QuestBorderScale_OnValueChanged = function(self, value)
-			if not oGlowClassicDB.FilterSettings then
-				oGlowClassicDB.FilterSettings = {}
-			end
-
-			local stepped = math.floor((value / 0.05) + 0.5) * 0.05
-			-- clamp for intensity (0.2 - 1.0)
-			stepped = math.max(0.2, math.min(1.0, stepped))
-
-			if self.Text and self.Text.SetText then
-				self.Text:SetText(('Quest border intensity: %.2fx'):format(stepped))
-			end
-
-			oGlowClassicDB.FilterSettings.questBorderIntensity = stepped
-			-- Back-compat for older versions that read questBorderScale.
-			oGlowClassicDB.FilterSettings.questBorderScale = stepped
 			oGlowClassic:CallOptionCallbacks()
 			updateAllActivePipes()
 		end
@@ -158,18 +107,10 @@ function frame:CreateOptions()
 		end)
 		questCheckbox:SetScript('OnLeave', DropDown_OnLeave)
 
-		questBorderScaleSlider:SetScript('OnEnter', function(self)
-			GameTooltip:SetOwner(self, 'ANCHOR_TOPLEFT')
-			GameTooltip:SetText('Adjusts the intensity of the quest-item border only (lower = less thick/glowy look).', nil, nil, nil, nil, 1)
-		end)
-		questBorderScaleSlider:SetScript('OnLeave', DropDown_OnLeave)
-		questBorderScaleSlider:SetScript('OnValueChanged', QuestBorderScale_OnValueChanged)
-	
 		function frame:refresh()
 			UIDropDownMenu_Initialize(thesDDown, DropDown_init)
 			UpdateSelected()
 			UpdateQuestCheckbox()
-			UpdateQuestBorderScaleSlider()
 		end
 		self:refresh()
 	end

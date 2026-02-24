@@ -1,4 +1,4 @@
-## Interface: 11508
+## Interface: 20505
 ## X-Min-Interface-Classic: 11508
 ## X-Min-Interface-BCC: 20505
 ## X-Min-Interface-Wrath: 30401
@@ -6,7 +6,7 @@
 ## X-Min-Interface-Mop: 50503
 ## Title: oGlowClassic
 ## Author: Haste, sbd74, pitbullnl91 (updated for WotLK/cata/MoP Classic)
-## Version: 0.3.11
+## Version: 0.3.12
 ## SavedVariables: oGlowClassicDB
 ## Notes: Make your shiny items... glow in the dark!
 ## OptionalDeps: Baganator
@@ -24,6 +24,7 @@ oglow-classic.lua
 ui\helpers.lua
 ui\pipes.lua
 ui\quality.lua
+ui\borders.lua
 ui\colors.lua
 
 pipes\bags.lua

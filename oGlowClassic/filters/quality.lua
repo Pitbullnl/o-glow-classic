@@ -6,6 +6,33 @@ local questEnabled = true
 
 local questCacheByItemID = {}
 
+local function getLinkType(itemLink)
+	if type(itemLink) ~= "string" then
+		return nil
+	end
+
+	-- Full hyperlink: |Htype:data|h...
+	local linkType = itemLink:match("|H([^:]+):")
+	if linkType then
+		return linkType
+	end
+
+	-- Raw link: type:data
+	return itemLink:match("^([^:]+):")
+end
+
+local function getBattlePetQuality(itemLink)
+	if type(itemLink) ~= "string" then
+		return nil
+	end
+
+	local q = itemLink:match("|Hbattlepet:%d+:%d+:(%d+)")
+	if not q then
+		q = itemLink:match("^battlepet:%d+:%d+:(%d+)")
+	end
+	return q and tonumber(q) or nil
+end
+
 local function matchesQuestTooltipText(text, questItemText, startsQuestText)
 	if not text then
 		return false
@@ -45,6 +72,11 @@ local function isQuestItemByTooltip(itemLink, itemID)
 	local questItemText = _G.ITEM_BIND_QUEST
 	local startsQuestText = _G.ITEM_STARTS_QUEST
 
+	-- Non-item links (e.g. battle pets) can't be scanned via item tooltips and can't be quest items.
+	if itemLink and getLinkType(itemLink) ~= "item" then
+		return false
+	end
+
 	-- Modern clients: Tooltip info API.
 	if C_TooltipInfo and (C_TooltipInfo.GetHyperlink or C_TooltipInfo.GetItemByID) then
 		local tooltipInfo
@@ -80,9 +112,17 @@ local function isQuestItemByTooltip(itemLink, itemID)
 	tt:ClearLines()
 	tt:SetOwner(UIParent, "ANCHOR_NONE")
 	if itemLink then
-		tt:SetHyperlink(itemLink)
+		local ok = pcall(tt.SetHyperlink, tt, itemLink)
+		if not ok then
+			tt:Hide()
+			return false
+		end
 	elseif itemID then
-		tt:SetHyperlink("item:" .. itemID)
+		local ok = pcall(tt.SetHyperlink, tt, "item:" .. itemID)
+		if not ok then
+			tt:Hide()
+			return false
+		end
 	else
 		return nil
 	end
@@ -117,6 +157,9 @@ local function isQuestItem(itemLinkOrID)
 
 	local itemLink = type(itemLinkOrID) == "string" and itemLinkOrID or nil
 	local itemID = type(itemLinkOrID) == "number" and itemLinkOrID or nil
+	if itemLink and getLinkType(itemLink) ~= "item" then
+		return false
+	end
 
 	-- Fast path: item info instant classification.
 	if C_Item and C_Item.GetItemInfoInstant then
@@ -190,6 +233,10 @@ local function scheduleRefreshAfterLoad(slot, itemRef)
 		return
 	end
 
+	if type(itemRef) == "string" and getLinkType(itemRef) == "battlepet" then
+		return
+	end
+
 	if slot.oGlowClassicQualityLoadPending then
 		return
 	end
@@ -204,7 +251,8 @@ local function scheduleRefreshAfterLoad(slot, itemRef)
 		end
 	elseif type(itemRef) == "string" then
 		if Item.CreateFromItemLink then
-			item = Item:CreateFromItemLink(itemRef)
+			local ok, created = pcall(Item.CreateFromItemLink, Item, itemRef)
+			item = ok and created or nil
 		end
 	end
 
@@ -241,6 +289,14 @@ local qualityFunc = function(slot, ...)
 	for i = 1, select('#', ...) do
 		local itemRef = normalizeItemLink(select(i, ...))
 		if itemRef then
+			-- Battle pets in bags use "battlepet:" links which are not item links in some clients.
+			-- They still have a quality value we can use for coloring (3rd field in the link).
+			if type(itemRef) == "string" and getLinkType(itemRef) == "battlepet" then
+				local petQuality = getBattlePetQuality(itemRef)
+				if petQuality ~= nil then
+					bestQuality = math.max(bestQuality, petQuality)
+				end
+			else
 			if questEnabled and not hasQuestItem and rawget(colorTable, 'quest') then
 				local isQuest = isQuestItem(itemRef)
 				if isQuest == true then
@@ -257,6 +313,7 @@ local qualityFunc = function(slot, ...)
 			else
 				missingInfo = true
 				scheduleRefreshAfterLoad(slot, itemRef)
+			end
 			end
 		end
 	end

@@ -220,6 +220,16 @@ local update = function(self)
 		frame = _G['ContainerFrame' .. i]
 		i = i + 1
 	end
+
+	-- Option changes (colors/intensity/filter settings) should apply immediately to
+	-- currently visible Baganator buttons, even when item links did not change.
+	hookBaganatorIfAvailable()
+	if not scanExistingBaganatorButtons(true) and Baganator and Baganator.API and Baganator.API.RequestItemButtonsRefresh then
+		Baganator.API.RequestItemButtonsRefresh()
+		if C_Timer and C_Timer.After then
+			C_Timer.After(0, function() scanExistingBaganatorButtons(true) end)
+		end
+	end
 end
 
 local ADDON_LOADED = function(self, event, addon)
