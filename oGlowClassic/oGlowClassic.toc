@@ -6,7 +6,7 @@
 ## X-Min-Interface-Mop: 50503
 ## Title: oGlowClassic
 ## Author: Haste, sbd74, pitbullnl91 (updated for WotLK/cata/MoP Classic)
-## Version: 0.3.12
+## Version: 0.3.14
 ## SavedVariables: oGlowClassicDB
 ## Notes: Make your shiny items... glow in the dark!
 ## OptionalDeps: Baganator

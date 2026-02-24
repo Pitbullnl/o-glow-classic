@@ -161,25 +161,153 @@ local function applyBaganatorIconBorderOverride(frame, visible)
 		end
 	end
 
+	local function hideBackdropBorderRegion(region, key)
+		if not (region and region.GetBackdropBorderColor and region.SetBackdropBorderColor) then
+			return
+		end
+
+		local storeKey = "oGlowClassic_" .. key .. "_BackdropBorderColor"
+
+		if visible then
+			if frame[storeKey] == nil then
+				local r, g, b, a = region:GetBackdropBorderColor()
+				frame[storeKey] = {r, g, b, a}
+			end
+			local r, g, b = region:GetBackdropBorderColor()
+			region:SetBackdropBorderColor(r or 1, g or 1, b or 1, 0)
+		elseif frame[storeKey] ~= nil then
+			local saved = frame[storeKey]
+			region:SetBackdropBorderColor(saved[1] or 1, saved[2] or 1, saved[3] or 1, saved[4] or 1)
+			frame[storeKey] = nil
+		end
+	end
+
+	local function hideBorderVisual(region, key)
+		hideAlphaRegion(region, key)
+		hideBackdropBorderRegion(region, key)
+	end
+
+	local function hideNamedBorderRegions(container, keyPrefix, skipKeys)
+		if type(container) ~= "table" then
+			return
+		end
+
+		for key, region in pairs(container) do
+			if type(key) == "string" and not (skipKeys and skipKeys[key]) then
+				local lowerKey = string.lower(key)
+				local isBorder = string.find(lowerKey, "border", 1, true) or string.find(lowerKey, "edge", 1, true)
+				local isQuestOverlay = string.find(lowerKey, "quest", 1, true) and (
+					string.find(lowerKey, "overlay", 1, true) or
+					string.find(lowerKey, "glow", 1, true) or
+					string.find(lowerKey, "ring", 1, true) or
+					string.find(lowerKey, "frame", 1, true)
+				)
+				if isBorder or isQuestOverlay then
+					hideBorderVisual(region, keyPrefix .. "_" .. key)
+				end
+			end
+		end
+	end
+
+	local function hideBorderLikeRegionsFromFrame(target, keyPrefix)
+		if not (target and target.GetRegions) then
+			return
+		end
+
+		local regionCount = select("#", target:GetRegions())
+		for i = 1, regionCount do
+			local region = select(i, target:GetRegions())
+			if region and region ~= frame.oGlowClassicBorder then
+				local shouldHide = false
+
+				local name = region.GetName and region:GetName() or nil
+				if type(name) == "string" then
+					local lowerName = string.lower(name)
+					if string.find(lowerName, "border", 1, true) or string.find(lowerName, "edge", 1, true) or string.find(lowerName, "quest", 1, true) then
+						shouldHide = true
+					end
+				end
+
+				if not shouldHide and region.GetAtlas then
+					local atlas = region:GetAtlas()
+					if type(atlas) == "string" then
+						local lowerAtlas = string.lower(atlas)
+						if string.find(lowerAtlas, "border", 1, true) or string.find(lowerAtlas, "edge", 1, true) or string.find(lowerAtlas, "quest", 1, true) then
+							shouldHide = true
+						end
+					end
+				end
+
+				if not shouldHide and region.GetTexture then
+					local texturePath = region:GetTexture()
+					if type(texturePath) == "string" then
+						local lowerTexturePath = string.lower(texturePath)
+						if string.find(lowerTexturePath, "border", 1, true) or string.find(lowerTexturePath, "edge", 1, true) or string.find(lowerTexturePath, "quest", 1, true) then
+							shouldHide = true
+						end
+					end
+				end
+
+				if shouldHide then
+					hideBorderVisual(region, keyPrefix .. "_Region" .. tostring(i) .. "_" .. tostring(region))
+				end
+			end
+		end
+	end
+
 	-- Blizzard-style border.
-	hideAlphaRegion(frame.IconBorder, "IconBorder")
+	hideBorderVisual(frame.IconBorder, "IconBorder")
+	hideBorderVisual(frame.IconQuestTexture, "IconQuestTexture")
+	hideBorderVisual(frame.QuestBorder, "QuestBorder")
+	hideBorderVisual(frame.QuestIcon, "QuestIcon")
+	hideBorderVisual(frame.IconOverlay, "IconOverlay")
+	-- Some skins use button normal texture as border.
+	hideBorderVisual(frame.NormalTexture, "NormalTexture")
+	if frame.GetNormalTexture then
+		hideBorderVisual(frame:GetNormalTexture(), "GetNormalTexture")
+	end
 
 	-- Baganator sometimes uses its own thin border textures.
 	local bgr = frame.BGR
 	if type(bgr) == "table" then
-		hideAlphaRegion(bgr.border, "BGR_border")
-		hideAlphaRegion(bgr.Border, "BGR_Border")
-		hideAlphaRegion(bgr.thinBorder, "BGR_thinBorder")
-		hideAlphaRegion(bgr.ThinBorder, "BGR_ThinBorder")
-		hideAlphaRegion(bgr.iconBorder, "BGR_iconBorder")
-		hideAlphaRegion(bgr.IconBorder, "BGR_IconBorder")
+		hideBorderVisual(bgr.border, "BGR_border")
+		hideBorderVisual(bgr.Border, "BGR_Border")
+		hideBorderVisual(bgr.thinBorder, "BGR_thinBorder")
+		hideBorderVisual(bgr.ThinBorder, "BGR_ThinBorder")
+		hideBorderVisual(bgr.iconBorder, "BGR_iconBorder")
+		hideBorderVisual(bgr.IconBorder, "BGR_IconBorder")
+		hideBorderVisual(bgr.QuestBorder, "BGR_QuestBorder")
+		hideBorderVisual(bgr.questBorder, "BGR_questBorder")
+		hideBorderVisual(bgr.QuestOverlay, "BGR_QuestOverlay")
+		hideBorderVisual(bgr.questOverlay, "BGR_questOverlay")
+		hideBorderVisual(bgr.QuestIcon, "BGR_QuestIcon")
+		hideBorderVisual(bgr.questIcon, "BGR_questIcon")
+		hideNamedBorderRegions(bgr, "BGR", {
+			border = true,
+			Border = true,
+			thinBorder = true,
+			ThinBorder = true,
+			iconBorder = true,
+			IconBorder = true,
+			QuestBorder = true,
+			questBorder = true,
+			QuestOverlay = true,
+			questOverlay = true,
+			QuestIcon = true,
+			questIcon = true,
+		})
+		hideBorderLikeRegionsFromFrame(bgr, "BGRRegions")
 	end
 
 	-- Some skins attach border textures directly to the button.
-	hideAlphaRegion(frame.border, "border")
-	hideAlphaRegion(frame.Border, "Border")
-	hideAlphaRegion(frame.thinBorder, "thinBorder")
-	hideAlphaRegion(frame.ThinBorder, "ThinBorder")
+	hideBorderVisual(frame.border, "border")
+	hideBorderVisual(frame.Border, "Border")
+	hideBorderVisual(frame.thinBorder, "thinBorder")
+	hideBorderVisual(frame.ThinBorder, "ThinBorder")
+	hideBorderVisual(frame.questBorder, "questBorder")
+	hideBorderVisual(frame.QuestOverlay, "QuestOverlay")
+	hideBorderVisual(frame.questOverlay, "questOverlay")
+	hideBorderLikeRegionsFromFrame(frame, "FrameRegions")
 end
 
 local borderDisplay = function(frame, color)
