@@ -307,6 +307,7 @@ if Settings and SettingsPanel then
 		local category = Settings.RegisterCanvasLayoutCategory(frame, frame.name)
 		Settings.RegisterAddOnCategory(category)
 		ns.mainCategory = category
+		ns.mainCategoryID = category.ID
 		ns.FlushSettingsRegistrations()
 	end)
 elseif InterfaceOptions_AddCategory then
@@ -320,7 +321,10 @@ SlashCmdList['OGLOW_UI'] = function()
 		if not ns.mainCategory then
 			ns.FlushSettingsRegistrations()
 		end
-        Settings.OpenToCategory(ns.mainCategory)
+		local categoryID = ns.mainCategoryID or (ns.mainCategory and ns.mainCategory.ID)
+		if type(categoryID) == 'number' then
+			Settings.OpenToCategory(categoryID)
+		end
     else
         InterfaceOptionsFrame_OpenToCategory('oGlowClassic')
     end
