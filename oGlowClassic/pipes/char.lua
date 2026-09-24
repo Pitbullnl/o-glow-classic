@@ -1,7 +1,7 @@
 -- TODO:
 --  - Write a description.
 
-local name, title, notes, enabled = C_AddOns.GetAddOnInfo("Fizzle")
+local name, title, notes, enabled = C_AddOns and C_AddOns.GetAddOnInfo and C_AddOns.GetAddOnInfo("Fizzle")
 if enabled then return end
 
 local _E
@@ -13,7 +13,7 @@ local slots = {
 }
 
 local update = function(self)
-	if(CharacterFrame:IsShown()) then
+	if(CharacterFrame and CharacterFrame:IsShown()) then
 		for key, slotName in pairs(slots) do
 			local slotFrame = _G['Character' .. slotName .. 'Slot']
 			local slotLink = GetInventoryItemLink('player', key)
@@ -39,7 +39,9 @@ local enable = function(self)
 			if(_E) then return update(...) end
 		end
 
-		CharacterFrame:HookScript('OnShow', hook)
+		if CharacterFrame then
+			CharacterFrame:HookScript('OnShow', hook)
+		end
 	end
 end
 

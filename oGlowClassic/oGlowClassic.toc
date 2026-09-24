@@ -1,4 +1,4 @@
-## Interface: 11509, 20506, 50504
+## Interface: 11509, 20506, 50504, 16001
 ## Title: oGlowClassic
 ## Author: Haste, sbd74, pitbullnl91 (updated for current WoW Classic clients)
 ## Version: 0.3.15

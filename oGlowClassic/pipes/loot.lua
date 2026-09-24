@@ -2,7 +2,7 @@ local hook
 local _E
 
 local update = function()
-	if(LootFrame:IsShown() and oGlowClassic:IsPipeEnabled'loot') then
+	if(LootFrame and LootFrame:IsShown() and oGlowClassic:IsPipeEnabled'loot') then
 		for i=1, LOOTFRAME_NUMBUTTONS or 4 do
 			local slotFrame = _G['LootButton' .. i]
 			local slot = slotFrame.slot
@@ -20,7 +20,7 @@ end
 local enable = function(self)
 	_E = true
 
-	if(not hook) then
+	if(not hook and LootFrameUpButton and LootFrameDownButton) then
 		LootFrameUpButton:HookScript("OnClick", update)
 		LootFrameDownButton:HookScript("OnClick", update)
 

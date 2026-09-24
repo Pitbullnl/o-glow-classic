@@ -5,6 +5,11 @@ local _E
 local hook
 
 local pipe = function(id)
+	if type(GetTradeSkillItemLink) ~= "function"
+		or type(GetTradeSkillNumReagents) ~= "function"
+		or type(GetTradeSkillReagentItemLink) ~= "function" then
+		return
+	end
 	local itemLink = GetTradeSkillItemLink(id)
 
 	if(itemLink) then
@@ -20,7 +25,7 @@ local pipe = function(id)
 end
 
 local doHook = function()
-	if(not hook) then
+	if(not hook and type(TradeSkillFrame_SetSelection) == "function") then
 		hook = function(...)
 			if(_E) then return pipe(...) end
 		end
@@ -37,8 +42,8 @@ local function ADDON_LOADED(self, event, addon)
 end
 
 local update = function(self)
-	local id = GetTradeSkillSelectionIndex()
-	if(id and C_AddOns.IsAddOnLoaded('Blizzard_TradeSkillUI')) then
+	local id = type(GetTradeSkillSelectionIndex) == "function" and GetTradeSkillSelectionIndex()
+	if(id and C_AddOns and C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded('Blizzard_TradeSkillUI')) then
 		return pipe(id)
 	end
 end
@@ -46,7 +51,7 @@ end
 local enable = function(self)
 	_E = true
 
-	if(C_AddOns.IsAddOnLoaded("Blizzard_TradeSkillUI")) then
+	if(C_AddOns and C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded("Blizzard_TradeSkillUI")) then
 		doHook()
 	else
 		self:RegisterEvent("ADDON_LOADED", ADDON_LOADED)

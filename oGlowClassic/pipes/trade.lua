@@ -1,6 +1,7 @@
 local _E
 
 local player = function(self, event, index)
+	if type(GetTradePlayerItemLink) ~= "function" then return end
 	local slotFrame = _G["TradePlayerItem"..index.."ItemButton"]
 	local slotLink = GetTradePlayerItemLink(index)
 
@@ -8,6 +9,7 @@ local player = function(self, event, index)
 end
 
 local target = function(self, event, index)
+	if type(GetTradeTargetItemLink) ~= "function" then return end
 	local slotFrame = _G["TradeRecipientItem"..index.."ItemButton"]
 	local slotLink = GetTradeTargetItemLink(index)
 

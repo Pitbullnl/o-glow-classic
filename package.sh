@@ -3,18 +3,20 @@ set -euo pipefail
 
 ADDON_DIR="oGlowClassic"
 BUILD_DIR="${BUILD_DIR:-dist}"
-DEFAULT_VARIANTS=(era tbc mop)
+DEFAULT_VARIANTS=(era tbc mop forever)
 
 declare -A INTERFACE_FOR_VARIANT=(
   [era]=11509
   [tbc]=20506
   [mop]=50504
+  [forever]=16001
 )
 
 declare -A CLIENT_VERSION_FOR_VARIANT=(
   [era]=1.15.9
   [tbc]=2.5.6
   [mop]=5.5.4
+  [forever]=1.60.1
 )
 
 version=$(awk -F': *' '/^## Version:/ {print $2; exit}' "$ADDON_DIR/oGlowClassic.toc")
@@ -31,7 +33,7 @@ for variant in "${variants[@]}"; do
   interface="${INTERFACE_FOR_VARIANT[$variant]:-}"
   client_version="${CLIENT_VERSION_FOR_VARIANT[$variant]:-}"
   if [ -z "$interface" ] || [ -z "$client_version" ]; then
-    echo "Unknown variant \"$variant\". Known variants: era tbc mop" >&2
+    echo "Unknown variant \"$variant\". Known variants: era tbc mop forever" >&2
     exit 1
   fi
 

@@ -8,6 +8,10 @@ local baganatorHooked
 local baganatorBagOpenHooks
 
 local pipe = function(self)
+	if not (C_Container and C_Container.GetContainerItemLink) then
+		return
+	end
+
 	if(oGlowClassic:IsPipeEnabled'bags') then
 		local id = self:GetID()
 		local name = self:GetName()
@@ -247,7 +251,7 @@ end
 local enable = function(self)
 	_E = true
 
-	if(not hook) then
+	if(not hook and type(ContainerFrame_Update) == "function") then
 		hooksecurefunc("ContainerFrame_Update", pipe)
 		hook = true
 	end

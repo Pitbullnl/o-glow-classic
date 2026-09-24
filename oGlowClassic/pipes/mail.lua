@@ -6,7 +6,7 @@ local hook
 local stack = {}
 
 local send = function(self)
-	if(not SendMailFrame:IsShown()) then return end
+	if(not SendMailFrame or not SendMailFrame:IsShown()) then return end
 
 	for i=1, ATTACHMENTS_MAX_SEND do
 		local slotLink = GetSendMailItemLink(i)
@@ -16,6 +16,7 @@ local send = function(self)
 end
 
 local inbox = function()
+	if type(GetInboxNumItems) ~= "function" or not InboxFrame then return end
 	local numItems = GetInboxNumItems()
 	local index = ((InboxFrame.pageNum - 1) * INBOXITEMS_TO_DISPLAY) + 1
 
@@ -38,7 +39,7 @@ local inbox = function()
 end
 
 local letter = function()
-	if(not InboxFrame.openMailID) then return end
+	if(not InboxFrame or not InboxFrame.openMailID) then return end
 
 	for i=1, ATTACHMENTS_MAX_RECEIVE do
 		local itemLink = GetInboxItemLink(InboxFrame.openMailID, i)
@@ -71,7 +72,7 @@ local enable = function(self)
 	self:RegisterEvent('MAIL_SEND_INFO_UPDATE', send)
 	self:RegisterEvent('MAIL_SEND_SUCCESS', send)
 
-	if(not hook) then
+	if(not hook and type(OpenMail_Update) == "function" and type(InboxFrame_Update) == "function") then
 		hooksecurefunc("OpenMail_Update", hookLetter)
 		hooksecurefunc("InboxFrame_Update", hookInbox)
 		hook = true

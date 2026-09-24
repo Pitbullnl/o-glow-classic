@@ -2,7 +2,7 @@
 --  - Write a description.
 -- we might want to merge this with char.lua...
 
-local name, title, notes, enabled = C_AddOns.GetAddOnInfo("Fizzle")
+local name, title, notes, enabled = C_AddOns and C_AddOns.GetAddOnInfo and C_AddOns.GetAddOnInfo("Fizzle")
 if enabled then return end
 
 local _E
@@ -21,7 +21,7 @@ pollFrame:SetScript('OnUpdate', function(self, elapsed)
 	time = time + elapsed
 
 	if(time >= 3) then
-		local unit = InspectFrame.unit
+		local unit = InspectFrame and InspectFrame.unit
 		if(not unit) then
 			self:Hide()
 			table.wipe(_MISSING)
@@ -60,7 +60,7 @@ local update = function(self)
 end
 
 local UNIT_INVENTORY_CHANGED = function(self, event, unit)
-	if(InspectFrame.unit == unit) then
+	if(InspectFrame and InspectFrame.unit == unit) then
 		update(self)
 	end
 end
@@ -82,7 +82,7 @@ end
 local enable = function(self)
 	_E = true
 
-	if(C_AddOns.IsAddOnLoaded("Blizzard_InspectUI")) then
+	if(C_AddOns and C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded("Blizzard_InspectUI")) then
 		self:RegisterEvent('PLAYER_TARGET_CHANGED', update)
 		self:RegisterEvent('UNIT_INVENTORY_CHANGED', UNIT_INVENTORY_CHANGED)
 		self:RegisterEvent('INSPECT_READY', update)

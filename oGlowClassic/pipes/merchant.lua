@@ -5,7 +5,7 @@ local _E
 local hook
 
 local update = function()
-	if(MerchantFrame:IsShown()) then
+	if(MerchantFrame and MerchantFrame:IsShown()) then
 		if(MerchantFrame.selectedTab == 1) then
 			for i=1, MERCHANT_ITEMS_PER_PAGE do
 				local index = (((MerchantFrame.page - 1) * MERCHANT_ITEMS_PER_PAGE) + i)
@@ -31,7 +31,7 @@ end
 local enable = function(self)
 	_E = true
 
-	if(not hook) then
+	if(not hook and type(MerchantFrame_Update) == "function") then
 		hook = function(...)
 			if(_E) then return update(...) end
 		end
