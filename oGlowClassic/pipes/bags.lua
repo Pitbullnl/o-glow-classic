@@ -2,10 +2,12 @@
 --  - Prevent unnecessary double updates.
 --  - Write a description.
 
-local hook
+local legacyHooked
+local modernUpdateAllHooked
 local _E
 local baganatorHooked
-local baganatorBagOpenHooks
+local bagOpenHooks
+local hookedModernFrames = setmetatable({}, {__mode = 'k'})
 
 local pipe = function(self)
 	if not (C_Container and C_Container.GetContainerItemLink) then
@@ -24,6 +26,62 @@ local pipe = function(self)
 			oGlowClassic:CallFilters('bags', 'Border', slotFrame, _E and slotLink)
 		end
 	end
+end
+
+-- The combined backpack uses pooled item buttons. It has no legacy
+-- ContainerFrame_Update callback or name-based Item1..ItemN buttons.
+local function pipeModernContainer(frame)
+	if not (_E and frame and frame.Items and frame.EnumerateValidItems and C_Container and C_Container.GetContainerItemLink) then
+		return
+	end
+
+	for _, button in frame:EnumerateValidItems() do
+		if button and button.GetBagID and button.GetID then
+			local bagID, slotID = button:GetBagID(), button:GetID()
+			if bagID ~= nil and slotID ~= nil then
+				oGlowClassic:CallFilters('bags', 'Border', button, C_Container.GetContainerItemLink(bagID, slotID))
+			else
+				oGlowClassic:CallFilters('bags', 'Border', button, false)
+			end
+		end
+	end
+end
+
+local function hookModernContainerFrame(frame)
+	if not (frame and frame.UpdateItems and frame.EnumerateValidItems and hooksecurefunc) or hookedModernFrames[frame] then
+		return
+	end
+
+	hooksecurefunc(frame, 'UpdateItems', pipeModernContainer)
+	hookedModernFrames[frame] = true
+	pipeModernContainer(frame)
+end
+
+local function forEachModernContainerFrame(callback)
+	local visited = {}
+	local function visit(frame)
+		if frame and not visited[frame] then
+			visited[frame] = true
+			callback(frame)
+		end
+	end
+
+	visit(_G.ContainerFrameCombinedBags)
+
+	local frames = _G.ContainerFrameContainer and _G.ContainerFrameContainer.ContainerFrames
+	if type(frames) == 'table' then
+		for _, frame in ipairs(frames) do
+			visit(frame)
+		end
+	end
+
+	for i = 1, NUM_CONTAINER_FRAMES or 13 do
+		visit(_G['ContainerFrame' .. i])
+	end
+end
+
+local function hookModernContainerFrames()
+	forEachModernContainerFrame(hookModernContainerFrame)
 end
 
 -- Baganator integration (runs under the normal 'bags' pipe)
@@ -182,8 +240,8 @@ local function hookBaganatorIfAvailable()
 	end
 end
 
-local function hookBaganatorBagOpenFunctions()
-	if baganatorBagOpenHooks or not hooksecurefunc then
+local function hookBagOpenFunctions()
+	if bagOpenHooks or not hooksecurefunc then
 		return
 	end
 
@@ -191,9 +249,13 @@ local function hookBaganatorBagOpenFunctions()
 		if not oGlowClassic:IsPipeEnabled('bags') then
 			return
 		end
+		hookModernContainerFrames()
 		hookBaganatorIfAvailable()
 		if C_Timer and C_Timer.After then
-			C_Timer.After(0, function() scanExistingBaganatorButtons(true) end)
+			C_Timer.After(0, function()
+				hookModernContainerFrames()
+				scanExistingBaganatorButtons(true)
+			end)
 			C_Timer.After(0.2, function() scanExistingBaganatorButtons(true) end)
 		else
 			scanExistingBaganatorButtons(true)
@@ -213,7 +275,7 @@ local function hookBaganatorBagOpenFunctions()
 		hooksecurefunc("ToggleBag", onOpen)
 	end
 
-	baganatorBagOpenHooks = true
+	bagOpenHooks = true
 end
 
 local update = function(self)
@@ -224,6 +286,8 @@ local update = function(self)
 		frame = _G['ContainerFrame' .. i]
 		i = i + 1
 	end
+	hookModernContainerFrames()
+	forEachModernContainerFrame(pipeModernContainer)
 
 	-- Option changes (colors/intensity/filter settings) should apply immediately to
 	-- currently visible Baganator buttons, even when item links did not change.
@@ -237,6 +301,7 @@ local update = function(self)
 end
 
 local ADDON_LOADED = function(self, event, addon)
+	hookModernContainerFrames()
 	if addon == "Baganator" then
 		hookBaganatorIfAvailable()
 		if C_Timer and C_Timer.After then
@@ -251,13 +316,18 @@ end
 local enable = function(self)
 	_E = true
 
-	if(not hook and type(ContainerFrame_Update) == "function") then
+	if(not legacyHooked and type(ContainerFrame_Update) == "function" and hooksecurefunc) then
 		hooksecurefunc("ContainerFrame_Update", pipe)
-		hook = true
+		legacyHooked = true
+	end
+	hookModernContainerFrames()
+	if not modernUpdateAllHooked and type(ContainerFrame_UpdateAll) == "function" and hooksecurefunc then
+		hooksecurefunc('ContainerFrame_UpdateAll', hookModernContainerFrames)
+		modernUpdateAllHooked = true
 	end
 
 	self:RegisterEvent('ADDON_LOADED', ADDON_LOADED)
-	hookBaganatorBagOpenFunctions()
+	hookBagOpenFunctions()
 	hookBaganatorIfAvailable()
 	if baganatorHooked then
 		scanExistingBaganatorButtons(true)
