@@ -4,20 +4,17 @@ Original oGlow addon, maintained for current WoW Classic clients. This addon is 
 
 oGlowClassic will light up your items, by adding a quality border to them. It will only display this border for common quality items and above.
 
-It will currently only display the quality borders on the following places:
-* Inventory
-* Inspect
-* Bank
-* Guild bank
-* Bags
-* Mail
-* Merchant
-* Trade
-* Professions
-* Character fly-out
-* Character
-* Loot
-* ~~Void storage~~
+The quality border pipes cover:
+
+* Bags, including Blizzard's combined backpack
+* Player bank
+* Character and inspect equipment
+* Mail, merchant, and trade frames
+* Professions and loot
+
+Baganator, Bagnon, and Bagnonium item buttons have optional integration. Bagnon and Bagnonium bank buttons follow the bank pipe setting. Guild bank, character fly-out, and void storage have no dedicated pipe.
+
+See the [changelog](CHANGELOG.md) for 0.3.17 changes and their validation status.
 
 ## Packaging
 
@@ -31,11 +28,12 @@ Use the helper script to create one validated ZIP per supported live client:
 ./package.sh forever   # build only the WoW Forever beta package
 ```
 
-Outputs are written to `dist/oGlowClassic-<addon-version>-<variant>.zip`. For version `0.3.16`, this produces:
+Outputs are written to `dist/oGlowClassic-<addon-version>-<variant>.zip`. For version `0.3.17`, this produces:
 
-* `oGlowClassic-0.3.16-era.zip` for Classic Era 1.15.9 (Interface `11509`)
-* `oGlowClassic-0.3.16-tbc.zip` for TBC Anniversary 2.5.6 (Interface `20506`)
-* `oGlowClassic-0.3.16-mop.zip` for MoP Classic 5.5.4 (Interface `50504`)
-* `oGlowClassic-0.3.16-forever.zip` for WoW Forever beta 1.60.1 (Interface `16001`)
+* `oGlowClassic-0.3.17-era.zip` for Classic Era 1.15.9 (Interface `11509`)
+* `oGlowClassic-0.3.17-tbc.zip` for TBC Anniversary 2.5.6 (Interface `20506`)
+* `oGlowClassic-0.3.17-mop.zip` for MoP Classic 5.5.4 (Interface `50504`)
+* `oGlowClassic-0.3.17-forever.zip` for WoW Forever beta 1.60.1 (Interface `16001`)
 
 Each ZIP contains only the `oGlowClassic/` addon directory and a TOC with exactly its target Interface value. The script fails if that post-build validation does not pass.
+Markdown documentation is excluded from the ZIPs.

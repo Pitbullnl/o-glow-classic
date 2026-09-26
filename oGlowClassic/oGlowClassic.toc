@@ -1,7 +1,7 @@
 ## Interface: 11509, 20506, 50504, 16001
 ## Title: oGlowClassic
 ## Author: Haste, sbd74, pitbullnl91 (updated for current WoW Classic clients)
-## Version: 0.3.16
+## Version: 0.3.17
 ## SavedVariables: oGlowClassicDB
 ## Notes: Make your shiny items... glow in the dark!
 ## OptionalDeps: Baganator, Bagnon, Bagnonium, Fizzle
