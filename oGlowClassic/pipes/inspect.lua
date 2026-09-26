@@ -2,8 +2,7 @@
 --  - Write a description.
 -- we might want to merge this with char.lua...
 
-local name, title, notes, enabled = C_AddOns and C_AddOns.GetAddOnInfo and C_AddOns.GetAddOnInfo("Fizzle")
-if enabled then return end
+if C_AddOns and C_AddOns.IsAddOnLoaded and C_AddOns.IsAddOnLoaded("Fizzle") then return end
 
 local _E
 local slots = {
