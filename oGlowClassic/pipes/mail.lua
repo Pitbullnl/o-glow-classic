@@ -2,13 +2,15 @@
 --  - Write a description.
 
 local _E
-local hook
+local letterHooked
+local inboxHooked
 local stack = {}
 
 local send = function(self)
 	if(not SendMailFrame or not SendMailFrame:IsShown()) then return end
+	if type(GetSendMailItemLink) ~= 'function' then return end
 
-	for i=1, ATTACHMENTS_MAX_SEND do
+	for i=1, ATTACHMENTS_MAX_SEND or 12 do
 		local slotLink = GetSendMailItemLink(i)
 		local slotFrame = _G["SendMailAttachment"..i]
 		self:CallFilters('mail', 'Border', slotFrame, _E and slotLink)
@@ -16,14 +18,14 @@ local send = function(self)
 end
 
 local inbox = function()
-	if type(GetInboxNumItems) ~= "function" or not InboxFrame then return end
+	if type(GetInboxNumItems) ~= "function" or type(GetInboxItemLink) ~= "function" or not InboxFrame then return end
 	local numItems = GetInboxNumItems()
-	local index = ((InboxFrame.pageNum - 1) * INBOXITEMS_TO_DISPLAY) + 1
+	local index = (((InboxFrame.pageNum or 1) - 1) * (INBOXITEMS_TO_DISPLAY or 7)) + 1
 
-	for i=1, INBOXITEMS_TO_DISPLAY do
+	for i=1, INBOXITEMS_TO_DISPLAY or 7 do
 		local slotFrame = _G["MailItem"..i.."Button"]
 		if (index <= numItems) then
-			for j=1, ATTACHMENTS_MAX_RECEIVE do
+			for j=1, ATTACHMENTS_MAX_RECEIVE or 16 do
 				local attachLink = GetInboxItemLink(index, j)
 				if(attachLink) then
 					table.insert(stack, attachLink)
@@ -39,15 +41,16 @@ local inbox = function()
 end
 
 local letter = function()
-	if(not InboxFrame or not InboxFrame.openMailID) then return end
+	if not InboxFrame then return end
+	local mailID = InboxFrame.openMailID
 
-	for i=1, ATTACHMENTS_MAX_RECEIVE do
-		local itemLink = GetInboxItemLink(InboxFrame.openMailID, i)
-		if(itemLink) then
-			local slotFrame = _G["OpenMailAttachmentButton"..i]
-
-			oGlowClassic:CallFilters('mail', 'Border', slotFrame, _E and itemLink)
+	for i=1, ATTACHMENTS_MAX_RECEIVE or 16 do
+		local itemLink
+		if mailID and mailID > 0 and type(GetInboxItemLink) == 'function' then
+			itemLink = GetInboxItemLink(mailID, i)
 		end
+		local slotFrame = _G["OpenMailAttachmentButton"..i]
+		oGlowClassic:CallFilters('mail', 'Border', slotFrame, _E and itemLink)
 	end
 end
 
@@ -65,26 +68,47 @@ local hookInbox = function(...)
 	if(_E) then return inbox(...) end
 end
 
+local function hookMailUpdates()
+	if not hooksecurefunc then return end
+	if(not letterHooked and type(OpenMail_Update) == "function") then
+		hooksecurefunc("OpenMail_Update", hookLetter)
+		letterHooked = true
+	end
+	if(not inboxHooked and type(InboxFrame_Update) == "function") then
+		hooksecurefunc("InboxFrame_Update", hookInbox)
+		inboxHooked = true
+	end
+end
+
+local function addonLoaded(self, event, addon)
+	if addon == 'Blizzard_MailFrame' then
+		hookMailUpdates()
+		update(self)
+	end
+end
+
 local enable = function(self)
 	_E = true
 
-	self:RegisterEvent('MAIL_SHOW', send)
+	self:RegisterEvent('MAIL_SHOW', update)
+	self:RegisterEvent('MAIL_INBOX_UPDATE', update)
 	self:RegisterEvent('MAIL_SEND_INFO_UPDATE', send)
 	self:RegisterEvent('MAIL_SEND_SUCCESS', send)
+	self:RegisterEvent('ADDON_LOADED', addonLoaded)
 
-	if(not hook and type(OpenMail_Update) == "function" and type(InboxFrame_Update) == "function") then
-		hooksecurefunc("OpenMail_Update", hookLetter)
-		hooksecurefunc("InboxFrame_Update", hookInbox)
-		hook = true
-	end
+	hookMailUpdates()
+	update(self)
 end
 
 local disable = function(self)
 	_E =  nil
+	update(self)
 
-	self:UnregisterEvent('MAIL_SHOW', send)
+	self:UnregisterEvent('MAIL_SHOW', update)
+	self:UnregisterEvent('MAIL_INBOX_UPDATE', update)
 	self:UnregisterEvent('MAIL_SEND_INFO_UPDATE', send)
 	self:UnregisterEvent('MAIL_SEND_SUCCESS', send)
+	self:UnregisterEvent('ADDON_LOADED', addonLoaded)
 end
 
 oGlowClassic:RegisterPipe('mail', enable, disable, update, 'Mail frame', nil)
