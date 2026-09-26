@@ -1,8 +1,34 @@
 local hook
+local modernHook
 local _E
 
+local function updateModernElement(element)
+	if not (element and element.Item and element.GetSlotIndex and type(GetLootSlotLink) == 'function') then
+		return
+	end
+
+	local slot = element:GetSlotIndex()
+	oGlowClassic:CallFilters('loot', 'Border', element.Item, _E and slot and GetLootSlotLink(slot))
+end
+
+local function updateModernLoot()
+	local scrollBox = LootFrame and LootFrame.ScrollBox
+	if scrollBox and scrollBox.ForEachFrame then
+		scrollBox:ForEachFrame(updateModernElement)
+	end
+end
+
+local function hookModernLoot()
+	if not modernHook and hooksecurefunc and LootFrameElementMixin and type(LootFrameElementMixin.Init) == 'function' then
+		hooksecurefunc(LootFrameElementMixin, 'Init', updateModernElement)
+		modernHook = true
+	end
+end
+
 local update = function()
-	if(LootFrame and LootFrame:IsShown() and oGlowClassic:IsPipeEnabled'loot') then
+	if(LootFrame and LootFrame:IsShown()) then
+		hookModernLoot()
+		updateModernLoot()
 		for i=1, LOOTFRAME_NUMBUTTONS or 4 do
 			local slotFrame = _G['LootButton' .. i]
 			if(slotFrame) then
@@ -21,6 +47,7 @@ end
 
 local enable = function(self)
 	_E = true
+	hookModernLoot()
 
 	if(not hook and LootFrameUpButton and LootFrameDownButton) then
 		LootFrameUpButton:HookScript("OnClick", update)
@@ -32,6 +59,7 @@ local enable = function(self)
 	self:RegisterEvent('LOOT_OPENED', update)
 	self:RegisterEvent('LOOT_SLOT_CLEARED', update)
 	self:RegisterEvent('LOOT_SLOT_CHANGED', update)
+	update()
 end
 
 local disable = function(self)
@@ -40,6 +68,7 @@ local disable = function(self)
 	self:UnregisterEvent('LOOT_OPENED', update)
 	self:UnregisterEvent('LOOT_SLOT_CLEARED', update)
 	self:UnregisterEvent('LOOT_SLOT_CHANGED', update)
+	update()
 end
 
 oGlowClassic:RegisterPipe('loot', enable, disable, update, 'Loot frame', nil)
