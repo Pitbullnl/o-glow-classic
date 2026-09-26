@@ -5,14 +5,16 @@ local update = function()
 	if(LootFrame and LootFrame:IsShown() and oGlowClassic:IsPipeEnabled'loot') then
 		for i=1, LOOTFRAME_NUMBUTTONS or 4 do
 			local slotFrame = _G['LootButton' .. i]
-			local slot = slotFrame.slot
+			if(slotFrame) then
+				local slot = slotFrame.slot
 
-			local itemLink
-			if(slot) then
-				itemLink = GetLootSlotLink(slot)
+				local itemLink
+				if(slot and type(GetLootSlotLink) == 'function') then
+					itemLink = GetLootSlotLink(slot)
+				end
+
+				oGlowClassic:CallFilters('loot', 'Border', slotFrame, _E and itemLink)
 			end
-
-			oGlowClassic:CallFilters('loot', 'Border', slotFrame, _E and itemLink)
 		end
 	end
 end
