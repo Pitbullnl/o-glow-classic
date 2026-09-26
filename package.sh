@@ -73,6 +73,8 @@ with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive
     for root, directories, files in os.walk(source_dir):
         directories.sort()
         for name in sorted(files):
+            if name.lower().endswith(".md"):
+                continue
             full_path = os.path.join(root, name)
             archive.write(full_path, os.path.relpath(full_path, stage))
 
@@ -86,6 +88,8 @@ with zipfile.ZipFile(zip_path) as archive:
         sys.exit("ZIP contains duplicate entries")
     if not names or any(not name.startswith(addon_dir + "/") for name in names):
         sys.exit("ZIP must contain exactly one top-level addon directory")
+    if any(name.lower().endswith(".md") for name in names):
+        sys.exit("ZIP must not contain Markdown documentation")
 
     toc_name = f"{addon_dir}/{addon_dir}.toc"
     if toc_name not in names:
