@@ -4,7 +4,7 @@
 ## Version: 0.3.16
 ## SavedVariables: oGlowClassicDB
 ## Notes: Make your shiny items... glow in the dark!
-## OptionalDeps: Baganator
+## OptionalDeps: Baganator, Bagnon, Bagnonium, Fizzle
 ## X-Website: https://www.curseforge.com/wow/addons/oglowclassic
 ## X-Curse-Project-ID: 504626
 
@@ -33,6 +33,8 @@ pipes\merchant.lua
 pipes\mail.lua
 
 pipes\loot.lua
+
+integrations\bagnon.lua
 
 displays\border.lua
 
