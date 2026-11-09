@@ -16,7 +16,7 @@ declare -A CLIENT_VERSION_FOR_VARIANT=(
   [era]=1.15.9
   [tbc]=2.5.6
   [mop]=5.5.4
-  [forever]=1.60.1
+  [forever]=1.60.1.70790
 )
 
 version=$(awk -F': *' '/^## Version:/ {print $2; exit}' "$ADDON_DIR/oGlowClassic.toc")

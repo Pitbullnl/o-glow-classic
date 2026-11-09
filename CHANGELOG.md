@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.18 - 2026-11-07
+
+- Updated the Forever package target to release build 1.60.1.70790, the [latest listed build](https://theforeverera.com/en/builds) as of 2026-11-07.
+- Retained Interface `16001`, which is also used by this release build, and removed beta wording from the current packaging instructions.
+- This update changes release metadata only. In-client verification on build 70790 is pending; the earlier gameplay validation below applies to 0.3.17.
+
 ## 0.3.17 - 2026-09-26
 
 ### New and improved
