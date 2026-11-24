@@ -13,9 +13,9 @@ declare -A INTERFACE_FOR_VARIANT=(
 )
 
 declare -A CLIENT_VERSION_FOR_VARIANT=(
-  [era]=1.15.9
-  [tbc]=2.5.6
-  [mop]=5.5.4
+  [era]=1.15.9.70576
+  [tbc]=2.5.6.70577
+  [mop]=5.5.4.70631
   [forever]=1.60.1.70790
 )
 

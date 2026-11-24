@@ -2,6 +2,7 @@
 
 ## 0.3.18 - 2026-11-07
 
+- Pre-release check on 2026-11-09: Blizzard's live manifests list [Era 1.15.9.70576](https://us.version.battle.net/wow_classic_era/versions), [TBC Anniversary 2.5.6.70577](https://us.version.battle.net/wow_anniversary/versions), and [MoP Classic 5.5.4.70631](https://us.version.battle.net/wow_classic/versions) in all listed regions. Recorded these exact build targets; patch versions and Interfaces `11509`, `20506`, and `50504` remain unchanged. Addon version remains 0.3.18; in-client regression checks are pending.
 - Updated the Forever package target to release build 1.60.1.70790, the [latest listed build](https://theforeverera.com/en/builds) as of 2026-11-07.
 - Retained Interface `16001`, which is also used by this release build, and removed beta wording from the current packaging instructions.
 - This update changes release metadata only. In-client verification on build 70790 is pending; the earlier gameplay validation below applies to 0.3.17.

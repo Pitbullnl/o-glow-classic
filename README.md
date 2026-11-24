@@ -30,10 +30,12 @@ Use the helper script to create one validated ZIP per supported live client:
 
 Outputs are written to `dist/oGlowClassic-<addon-version>-<variant>.zip`. For version `0.3.18`, this produces:
 
-* `oGlowClassic-0.3.18-era.zip` for Classic Era 1.15.9 (Interface `11509`)
-* `oGlowClassic-0.3.18-tbc.zip` for TBC Anniversary 2.5.6 (Interface `20506`)
-* `oGlowClassic-0.3.18-mop.zip` for MoP Classic 5.5.4 (Interface `50504`)
+* `oGlowClassic-0.3.18-era.zip` for Classic Era 1.15.9.70576 (Interface `11509`)
+* `oGlowClassic-0.3.18-tbc.zip` for TBC Anniversary 2.5.6.70577 (Interface `20506`)
+* `oGlowClassic-0.3.18-mop.zip` for MoP Classic 5.5.4.70631 (Interface `50504`)
 * `oGlowClassic-0.3.18-forever.zip` for WoW Forever 1.60.1.70790 (Interface `16001`)
+
+The Era, TBC Anniversary, and MoP targets were checked on 2026-11-09 against Blizzard's live version manifests: [Era](https://us.version.battle.net/wow_classic_era/versions), [TBC Anniversary](https://us.version.battle.net/wow_anniversary/versions), and [MoP](https://us.version.battle.net/wow_classic/versions). All listed regions report the builds above. Their patch versions and Interface targets remain unchanged; in-client regression checks are pending.
 
 The Forever target follows the [latest listed build](https://theforeverera.com/en/builds), checked on 2026-11-07. Packaging checks validate the archive; in-client verification on build 70790 is pending.
 

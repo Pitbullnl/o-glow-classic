@@ -6,8 +6,10 @@ local legacyHooked
 local modernUpdateAllHooked
 local _E
 local baganatorHooked
+local baganatorSkinListenerRegistered
 local bagOpenHooks
 local hookedModernFrames = setmetatable({}, {__mode = 'k'})
+local hookedBaganatorButtons = setmetatable({}, {__mode = 'k'})
 
 local pipe = function(self)
 	if not (C_Container and C_Container.GetContainerItemLink) then
@@ -137,21 +139,47 @@ local function updateBaganatorButton(button, passedLinkOrID, force)
 	oGlowClassic:CallFilters('bags', 'Border', button, itemRef)
 end
 
+local function updateBaganatorButtonAfterDetails(button)
+	updateBaganatorButton(button)
+end
+
+local function trackBaganatorButton(details, force)
+	if not (details and details.regionType == "ItemButton" and details.region) then
+		return
+	end
+
+	local button = details.region
+	if not hookedBaganatorButtons[button] and hooksecurefunc and type(button.SetItemDetails) == 'function' then
+		-- Classic buttons can set their quality before replacing BGR. By the
+		-- end of SetItemDetails, BGR describes the new item or the empty slot.
+		hooksecurefunc(button, 'SetItemDetails', updateBaganatorButtonAfterDetails)
+		hookedBaganatorButtons[button] = true
+	end
+	updateBaganatorButton(button, nil, force)
+end
+
 local function scanExistingBaganatorButtons(force)
-	if not (Baganator and Baganator.API and Baganator.API.Skins and Baganator.API.Skins.GetAllFrames) then
+	local skins = Baganator and Baganator.API and Baganator.API.Skins
+	if not (_E and skins) then
 		return false
 	end
 
-	local frames = Baganator.API.Skins.GetAllFrames()
+	if not baganatorSkinListenerRegistered and skins.RegisterListener then
+		skins.RegisterListener(function(details)
+			if _E then
+				trackBaganatorButton(details)
+			end
+		end)
+		baganatorSkinListenerRegistered = true
+	end
+
+	local frames = skins.GetAllFrames and skins.GetAllFrames()
 	if type(frames) ~= "table" then
 		return false
 	end
 
 	for i = 1, #frames do
-		local details = frames[i]
-		if details and details.regionType == "ItemButton" and details.region then
-			updateBaganatorButton(details.region, nil, force)
-		end
+		trackBaganatorButton(frames[i], force)
 	end
 
 	return true
@@ -202,23 +230,9 @@ local function hookBaganatorIfAvailable()
 		return
 	end
 
-	if Baganator and Baganator.API and Baganator.API.Skins and Baganator.API.Skins.RegisterListener then
-		Baganator.API.Skins.RegisterListener(function(details)
-			if not oGlowClassic:IsPipeEnabled('bags') then
-				return
-			end
-			if details and details.regionType == "ItemButton" and details.region then
-				updateBaganatorButton(details.region)
-			end
-		end)
-	end
-
-	if hooksecurefunc then
+	if hooksecurefunc and type(SetItemButtonQuality) == 'function' then
 		hooksecurefunc("SetItemButtonQuality", function(button, quality, itemLinkOrID)
-			if not oGlowClassic:IsPipeEnabled('bags') then
-				return
-			end
-			if button and button.BGR ~= nil then
+			if _E and button and button.BGR ~= nil and not hookedBaganatorButtons[button] then
 				updateBaganatorButton(button, itemLinkOrID)
 			end
 		end)
